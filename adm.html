@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Portal - Admin Dashboard</title>
+    <style>
+        /* CSS Variables */
+        :root {
+            --primary: #0f172a;
+            --primary-hover: #334155;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --bg-color: #f1f5f9;
+            --surface: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --radius: 8px;
+            --font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Layout */
+        .sidebar {
+            width: 260px;
+            background-color: var(--primary);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+            z-index: 10;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-menu {
+            list-style: none;
+            padding: 1rem 0;
+            flex: 1;
+        }
+
+        .nav-item {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: #cbd5e1;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-left: 4px solid var(--accent);
+        }
+
+        .nav-item.external-link {
+            border-left: 4px solid transparent;
+            color: #94a3b8;
+        }
+
+        .nav-item.external-link:hover {
+            color: white;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 2rem;
+            max-width: calc(100vw - 260px);
+        }
+
+        /* Views */
+        .view {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Typography & Utilities */
+        h2 {
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+            font-size: 1.75rem;
+        }
+
+        .text-muted {
+            color: var(--text-muted);
+        }
+
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Buttons */
+        .btn {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+        }
+
+        .btn-outline:hover {
+            background-color: var(--bg-color);
+        }
+
+        .btn-sm {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.85rem;
+        }
+
+        /* Dashboard Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border);
+        }
+
+        .stat-card h4 {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        /* Tables */
+        .table-container {
+            background: var(--surface);
+            border-radius: var(--radius);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+            border: 1px solid var(--border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th,
+        td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background-color: #f8fafc;
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 99px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .badge.published {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge.draft {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        /* Forms & Inputs */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 0.6rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-family: inherit;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* Modal */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--surface);
+            padding: 2rem;
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+        }
+
+        .modal-footer {
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="sidebar-header">Admin Portal</div>
+        <ul class="nav-menu">
+            <li class="nav-item active" onclick="switchTab('dashboard', this)">📊 Dashboard</li>
+            <li class="nav-item" onclick="switchTab('tests', this)">📝 Manage Tests</li>
+            <li class="nav-item" onclick="switchTab('results', this)">🏆 Student Results</li>
+            <li
+                style="margin-top: 2rem; padding: 0 1.5rem; text-transform: uppercase; font-size: 0.75rem; color: #64748b; font-weight: bold;">
+                External Data</li>
+            <!-- Opens the Google Sheet -->
+            <li class="nav-item external-link" onclick="openSheet()">
+                🗃️ Open Question Bank ↗
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+
+        <!-- Dashboard View -->
+        <div id="view-dashboard" class="view active">
+            <h2>Dashboard Overview</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>Total Tests</h4>
+                    <div class="value" id="stat-tests">0</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Total Students</h4>
+                    <div class="value" id="stat-students">0</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Total Attempts</h4>
+                    <div class="value" id="stat-attempts">0</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Avg. Score (%)</h4>
+                    <div class="value" id="stat-avg-score">0%</div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div style="padding: 1.5rem; border-bottom: 1px solid var(--border);">
+                    <h3 style="margin: 0; font-size: 1.1rem;">Recent Results</h3>
+                </div>
+                <table id="dashboard-results-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Student</th>
+                            <th>Test Name</th>
+                            <th>Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Manage Tests View -->
+        <div id="view-tests" class="view">
+            <div class="header-actions">
+                <h2>Manage Tests</h2>
+                <button class="btn" onclick="openTestModal()">+ Create New Test</button>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Test Name</th>
+                            <th>Subject & Topic</th>
+                            <th>Questions</th>
+                            <th>Duration</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tests-table-body">
+                        <!-- Injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Student Results View -->
+        <div id="view-results" class="view">
+            <div class="header-actions">
+                <h2>Student Results</h2>
+                <div>
+                    <select id="filter-test" onchange="renderResults()" style="width: 250px;">
+                        <option value="all">All Tests</option>
+                        <!-- Injected via JS -->
+                    </select>
+                </div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Student ID</th>
+                            <th>Name</th>
+                            <th>Test</th>
+                            <th>Score</th>
+                            <th>Percentage</th>
+                            <th>Time Taken</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-table-body">
+                        <!-- Injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal: Create / Edit Test -->
+    <div id="test-modal" class="overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modal-title">Create New Test</h3>
+                <button class="btn btn-outline btn-sm" onclick="closeTestModal()"
+                    style="border:none; font-size: 1.2rem;">&times;</button>
+            </div>
+            <form id="test-form">
+                <input type="hidden" id="form-test-id">
+
+                <div class="form-group">
+                    <label>Test Name</label>
+                    <input type="text" id="form-name" required placeholder="e.g. Python Basics Exam">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Subject</label>
+                        <input type="text" id="form-subject" required placeholder="e.g. Python">
+                    </div>
+                    <div class="form-group">
+                        <label>Topic</label>
+                        <input type="text" id="form-topic" required placeholder="e.g. Loops & Arrays">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Duration (minutes)</label>
+                        <input type="number" id="form-duration" required min="1" placeholder="30">
+                    </div>
+                    <div class="form-group">
+                        <label>Total Questions</label>
+                        <input type="number" id="form-questions" required min="1" placeholder="20">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="form-status" required>
+                        <option value="Draft">Draft</option>
+                        <option value="Published">Published</option>
+                    </select>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeTestModal()">Cancel</button>
+                    <button type="submit" class="btn">Save Test</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div id="global-loader" class="loading-screen">
+        <div class="spinner"></div>
+        <p style="margin-top: 1rem; color: var(--primary); font-weight: 500;">Syncing with Database...</p>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        // SAME Apps Script URL used for the student portal.
+        const API_URL = 'https://script.google.com/macros/s/AKfycbyu6I2NW_XjxqwUXSRJ2MXYvoyDcFa6soMNy1pCzMdgC1k6Rxt92WkB5Xz4M7oeL3cM/exec';
+
+        // IMPORTANT: Replace this link with your actual Google Sheet URL so admins can manage questions.
+        const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1L61ufwVz62jegigR1iN7iCbq3sAQ5xUNgMcZXybNnnA/edit?gid=946088164#gid=946088164';
+
+        // --- STATE ---
+        let adminState = {
+            tests: [],
+            results: [],
+            students: []
+        };
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchAdminData();
+
+            // Handle form submission
+            document.getElementById('test-form').addEventListener('submit', handleTestSubmit);
+        });
+
+        // --- NAVIGATION ---
+        function switchTab(viewId, element) {
+            // Update active link
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+
+            // Update active view
+            document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+            document.getElementById(`view-${viewId}`).classList.add('active');
+        }
+
+        function openSheet() {
+            window.open(GOOGLE_SHEET_URL, '_blank');
+        }
+
+        // --- API CALLS ---
+        async function fetchAdminData() {
+            showLoader(true);
+            try {
+                // We use a new endpoint 'getAdminData' that we added to Code.gs
+                const response = await fetch(`${API_URL}?action=getAdminData`);
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    adminState.tests = result.data.tests || [];
+                    adminState.results = result.data.results || [];
+                    adminState.students = result.data.students || [];
+
+                    refreshUI();
+                } else {
+                    alert("Error fetching data: " + result.message);
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Failed to connect to the backend. Ensure your Apps Script is correctly updated and deployed.");
+            }
+            showLoader(false);
+        }
+
+        async function handleTestSubmit(e) {
+            e.preventDefault();
+            showLoader(true);
+
+            const testId = document.getElementById('form-test-id').value;
+
+            const testData = {
+                testId: testId || generateId(),
+                testName: document.getElementById('form-name').value,
+                subject: document.getElementById('form-subject').value,
+                topic: document.getElementById('form-topic').value,
+                duration: document.getElementById('form-duration').value,
+                totalQuestions: document.getElementById('form-questions').value,
+                status: document.getElementById('form-status').value
+            };
+
+            const payload = {
+                action: 'saveTest',
+                data: testData
+            };
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    closeTestModal();
+                    await fetchAdminData(); // Refresh all data to sync state
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                alert("Failed to save test. " + error.message);
+            }
+            showLoader(false);
+        }
+
+        // --- RENDER FUNCTIONS ---
+        function refreshUI() {
+            renderDashboard();
+            renderTests();
+            populateTestFilter();
+            renderResults();
+        }
+
+        function renderDashboard() {
+            // Cards
+            document.getElementById('stat-tests').textContent = adminState.tests.length;
+
+            // Unique students from results (or use adminState.students length)
+            const uniqueStudents = new Set(adminState.results.map(r => r.studentId)).size;
+            document.getElementById('stat-students').textContent = uniqueStudents;
+
+            document.getElementById('stat-attempts').textContent = adminState.results.length;
+
+            // Avg Score Calculation (Parses percentage string like '80%' to float)
+            let totalPct = 0;
+            let validResults = 0;
+            adminState.results.forEach(r => {
+                if (r.percentage && r.percentage !== 'Pending') {
+                    let val = parseFloat(r.percentage);
+                    if (!isNaN(val)) {
+                        totalPct += val;
+                        validResults++;
+                    }
+                }
+            });
+            const avg = validResults > 0 ? (totalPct / validResults).toFixed(1) + '%' : 'N/A';
+            document.getElementById('stat-avg-score').textContent = avg;
+
+            // Recent Results Table (Last 5)
+            const recent = [...adminState.results].reverse().slice(0, 5);
+            const tbody = document.querySelector('#dashboard-results-table tbody');
+            tbody.innerHTML = recent.map(r => `
+                <tr>
+                    <td>${formatDate(r.timestamp)}</td>
+                    <td>${r.studentName || 'Unknown'}</td>
+                    <td>${r.testName || '-'}</td>
+                    <td><span style="font-weight: 500; color: var(--success);">${r.score || 'Pending'}</span></td>
+                </tr>
+            `).join('') || '<tr><td colspan="4" class="text-center text-muted">No results found</td></tr>';
+        }
+
+        function renderTests() {
+            const tbody = document.getElementById('tests-table-body');
+            tbody.innerHTML = adminState.tests.map(t => `
+                <tr>
+                    <td class="text-muted" style="font-size:0.85rem;">${t.testId}</td>
+                    <td style="font-weight: 500;">${t.testName}</td>
+                    <td>${t.subject} <br><span class="text-muted" style="font-size:0.8rem">${t.topic}</span></td>
+                    <td>${t.totalQuestions}</td>
+                    <td>${t.duration} m</td>
+                    <td>
+                        <span class="badge ${t.status?.toLowerCase() === 'published' ? 'published' : 'draft'}">
+                            ${t.status}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-outline btn-sm" onclick='editTest(${JSON.stringify(t)})'>Edit</button>
+                    </td>
+                </tr>
+            `).join('') || '<tr><td colspan="7" class="text-center text-muted">No tests found. Create one to begin.</td></tr>';
+        }
+
+        function populateTestFilter() {
+            const select = document.getElementById('filter-test');
+            // Keep the "All Tests" option, remove the rest
+            select.innerHTML = '<option value="all">All Tests</option>';
+
+            adminState.tests.forEach(t => {
+                select.innerHTML += `<option value="${t.testId}">${t.testName}</option>`;
+            });
+        }
+
+        function renderResults() {
+            const filterValue = document.getElementById('filter-test').value;
+            const tbody = document.getElementById('results-table-body');
+
+            let filtered = adminState.results;
+            if (filterValue !== 'all') {
+                filtered = filtered.filter(r => r.testId == filterValue);
+            }
+
+            // Show latest first
+            filtered.reverse();
+
+            tbody.innerHTML = filtered.map(r => `
+                <tr>
+                    <td class="text-muted" style="font-size:0.9rem;">${formatDate(r.timestamp)}</td>
+                    <td style="font-size:0.85rem;">${r.studentId}</td>
+                    <td style="font-weight: 500;">${r.studentName}</td>
+                    <td>${r.testName}</td>
+                    <td style="font-weight: 600;">${r.score} / ${r.total}</td>
+                    <td>
+                        <span style="color: ${parseFloat(r.percentage) >= 50 ? 'var(--success)' : 'var(--danger)'}">
+                            ${r.percentage || 'N/A'}
+                        </span>
+                    </td>
+                    <td class="text-muted">${r.timeTaken}</td>
+                </tr>
+            `).join('') || '<tr><td colspan="7" class="text-center text-muted">No results found for this selection.</td></tr>';
+        }
+
+        // --- MODAL & UTILS ---
+        function openTestModal() {
+            document.getElementById('test-form').reset();
+            document.getElementById('form-test-id').value = '';
+            document.getElementById('modal-title').textContent = 'Create New Test';
+            document.getElementById('test-modal').classList.add('active');
+        }
+
+        function editTest(testData) {
+            document.getElementById('modal-title').textContent = 'Edit Test';
+            document.getElementById('form-test-id').value = testData.testId;
+            document.getElementById('form-name').value = testData.testName;
+            document.getElementById('form-subject').value = testData.subject;
+            document.getElementById('form-topic').value = testData.topic;
+            document.getElementById('form-duration').value = testData.duration;
+            document.getElementById('form-questions').value = testData.totalQuestions;
+
+            // Normalize status case
+            const statusSelect = document.getElementById('form-status');
+            const statusVal = testData.status?.toLowerCase() === 'published' ? 'Published' : 'Draft';
+            statusSelect.value = statusVal;
+
+            document.getElementById('test-modal').classList.add('active');
+        }
+
+        function closeTestModal() {
+            document.getElementById('test-modal').classList.remove('active');
+        }
+
+        function showLoader(show) {
+            document.getElementById('global-loader').style.display = show ? 'flex' : 'none';
+        }
+
+        function generateId() {
+            return 'TST' + Math.random().toString(36).substring(2, 6).toUpperCase();
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const d = new Date(dateString);
+            if (isNaN(d)) return dateString;
+            return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+    </script>
+</body>
+
+</html>

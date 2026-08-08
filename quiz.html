@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gaurav Computer Classes - Exam Portal</title>
+    <!-- Plus Jakarta Sans Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        /* Modern Dark Mode Design System based on #16363E (Default) */
+        :root {
+            /* Core Backgrounds */
+            --bg-base: #091013;
+            --bg-surface: #101c21;
+            --bg-surface-hover: #15252b;
+
+            /* Primary Brand Palette based around #16363E */
+            --primary-dark: #16363E;
+            --primary: #21515d;
+            --primary-light: #2c6e7e;
+            --primary-active: #388a9e;
+            --primary-transparent: rgba(44, 110, 126, 0.15);
+
+            /* Borders */
+            --border-w: 1px;
+            --border-subtle: #1e333a;
+            --border-strong: #2c4953;
+
+            /* Typography */
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --text-placeholder: #475569;
+
+            /* Status Colors */
+            --success: #10b981;
+            --success-bg: rgba(16, 185, 129, 0.1);
+            --danger: #ef4444;
+            --danger-bg: rgba(239, 68, 68, 0.1);
+            --warning: #f59e0b;
+
+            /* UI Elements */
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+
+            /* Fonts */
+            --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            --font-mono: 'Consolas', 'Courier New', Courier, monospace;
+        }
+
+        /* Light Mode Overrides */
+        body.light-theme {
+            --bg-base: #f1f5f9;
+            /* Slightly softer to contrast with white cards */
+            --bg-surface: #ffffff;
+            --bg-surface-hover: #f8fafc;
+
+            /* Keep brand identity but adapt for light mode */
+            --primary-dark: #0f172a;
+            --primary: #16363E;
+            --primary-light: #2c6e7e;
+            --primary-active: #21515d;
+            --primary-transparent: rgba(22, 54, 62, 0.08);
+
+            /* Thick borders exclusively for light mode */
+            --border-w: 2px;
+            --border-subtle: #cbd5e1;
+            --border-strong: #94a3b8;
+
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --text-placeholder: #94a3b8;
+
+            --success: #059669;
+            --success-bg: rgba(16, 185, 129, 0.15);
+            --danger: #dc2626;
+            --danger-bg: rgba(239, 68, 68, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-base);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-strong);
+            border-radius: var(--radius-sm);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-light);
+        }
+
+        /* Global Header */
+        .app-header {
+            background-color: var(--bg-surface);
+            border-bottom: var(--border-w) solid var(--border-subtle);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .brand {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand-name {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--text-main);
+            letter-spacing: -0.02em;
+        }
+
+        .brand-subtitle {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--primary-light);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Views Management */
+        .view {
+            display: none;
+            min-height: calc(100vh - 70px);
+            padding: 3rem 1rem;
+        }
+
+        .view.active {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Layout Containers */
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--bg-surface);
+            padding: 2.5rem;
+            border-radius: var(--radius-lg);
+            border: var(--border-w) solid var(--border-subtle);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .exam-container {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            height: calc(100vh - 120px);
+        }
+
+        /* Typography */
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-muted {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .welcome-header {
+            margin-bottom: 2.5rem;
+        }
+
+        /* Form & Inputs */
+        .form-group {
+            margin-bottom: 1.5rem;
+            width: 100%;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background-color: var(--bg-base);
+            border: var(--border-w) solid var(--border-strong);
+            color: var(--text-main);
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.2s ease;
+        }
+
+        input[type="text"]::placeholder {
+            color: var(--text-placeholder);
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            background-color: var(--bg-surface);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--primary);
+            color: #ffffff;
+            border: var(--border-w) solid var(--primary-light);
+            padding: 0.875rem 1.5rem;
+            font-size: 0.95rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            text-align: center;
+            width: 100%;
+            letter-spacing: 0.02em;
+        }
+
+        .btn:hover:not(:disabled) {
+            background-color: var(--primary-light);
+            border-color: var(--primary-active);
+        }
+
+        .btn:disabled {
+            background-color: var(--bg-surface-hover);
+            border-color: var(--border-subtle);
+            color: var(--text-placeholder);
+            cursor: not-allowed;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: var(--border-w) solid var(--border-strong);
+            color: var(--text-main);
+        }
+
+        .btn-outline:hover:not(:disabled) {
+            background-color: var(--bg-surface-hover);
+            border-color: var(--text-muted);
+        }
+
+        .btn-success {
+            background-color: var(--primary-light);
+            border-color: var(--primary-active);
+            color: #ffffff;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background-color: var(--primary-active);
+        }
+
+        /* Theme Icon Button */
+        .btn-icon {
+            background: transparent;
+            border: var(--border-w) solid var(--border-strong);
+            color: var(--text-main);
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-icon:hover {
+            background: var(--bg-surface-hover);
+            border-color: var(--text-muted);
+        }
+
+        /* Test List Cards - Converted to Dashboard Grid */
+        #tests-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            width: 100%;
+        }
+
+        .test-card {
+            background-color: var(--bg-surface);
+            border: var(--border-w) solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+        }
+
+        .test-card:hover {
+            border-color: var(--primary-light);
+            background-color: var(--bg-surface-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        body.light-theme .test-card:hover {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+        }
+
+        .test-card h3 {
+            margin-bottom: 0.75rem;
+            color: var(--text-main);
+            font-size: 1.25rem;
+            line-height: 1.3;
+        }
+
+        .test-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .meta-badge {
+            background: var(--bg-base);
+            padding: 0.4rem 0.75rem;
+            border-radius: var(--radius-sm);
+            border: var(--border-w) solid var(--border-subtle);
+            display: inline-flex;
+            align-items: center;
+            width: fit-content;
+        }
+
+        /* Instructions Screen */
+        .info-panel {
+            background: var(--bg-base);
+            padding: 1.5rem;
+            border-radius: var(--radius-md);
+            border: var(--border-w) solid var(--border-subtle);
+            margin-bottom: 2rem;
+            text-align: left;
+        }
+
+        .info-panel p {
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .info-panel strong {
+            color: var(--text-muted);
+            font-weight: 500;
+            display: inline-block;
+            width: 140px;
+        }
+
+        .instructions-list {
+            text-align: left;
+            margin-left: 1.25rem;
+            margin-bottom: 2.5rem;
+            color: var(--text-muted);
+        }
+
+        .instructions-list li {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Exam Interface Layout */
+        .exam-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-surface);
+            padding: 1.25rem 1.5rem;
+            border-radius: var(--radius-md);
+            border: var(--border-w) solid var(--border-subtle);
+        }
+
+        .timer-badge {
+            background: var(--bg-base);
+            padding: 0.6rem 1.25rem;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: var(--border-w) solid var(--border-strong);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .timer-badge.warning {
+            color: var(--danger);
+            border-color: rgba(239, 68, 68, 0.4);
+            background: var(--danger-bg);
+        }
+
+        .exam-body {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 1.5rem;
+            flex: 1;
+            min-height: 0;
+            /* Important for child overflow */
+        }
+
+        /* Question Area */
+        .question-section {
+            background: var(--bg-surface);
+            border-radius: var(--radius-md);
+            padding: 2rem;
+            border: var(--border-w) solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .question-text {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-main);
+            line-height: 1.6;
+        }
+
+        /* Code Snippet Styles */
+        .code-block {
+            background: #060a0c;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+
+            max-height: none;
+            overflow: visible;
+
+            margin-bottom: 1.25rem;
+            border: var(--border-w) solid var(--border-strong);
+
+            white-space: pre-wrap;
+            overflow-wrap: break-word;
+            word-break: break-word;
+
+            line-height: 1.4;
+        }
+
+        /* Custom Options Grid */
+        .options-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .option-label {
+            display: flex;
+            align-items: center;
+            padding: 0.875rem 1.25rem;
+            border: var(--border-w) solid var(--border-strong);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: var(--bg-base);
+        }
+
+        .option-label:hover {
+            border-color: var(--text-muted);
+            background: var(--bg-surface-hover);
+        }
+
+        /* Custom Radio Button Design */
+        .hidden-radio {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+
+        .custom-radio {
+            height: 20px;
+            width: 20px;
+            border: 2px solid var(--text-placeholder);
+            border-radius: 50%;
+            margin-right: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+
+        .hidden-radio:checked~.custom-radio {
+            border-color: var(--primary-light);
+        }
+
+        .hidden-radio:checked~.custom-radio::after {
+            content: '';
+            width: 10px;
+            height: 10px;
+            background-color: var(--primary-light);
+            border-radius: 50%;
+        }
+
+        .option-label.selected {
+            border-color: var(--primary-light);
+            background: var(--primary-transparent);
+        }
+
+        .option-text {
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        /* Question Palette */
+        .palette-section {
+            background: var(--bg-surface);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            border: var(--border-w) solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .palette-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .palette-btn {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: var(--border-w) solid var(--border-strong);
+            border-radius: var(--radius-sm);
+            background: var(--bg-base);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            transition: all 0.2s;
+        }
+
+        .palette-btn:hover {
+            border-color: var(--text-muted);
+        }
+
+        .palette-btn.answered {
+            background: var(--primary-light);
+            color: #ffffff;
+            border-color: var(--primary-active);
+        }
+
+        .palette-btn.active {
+            border: 2px solid var(--primary-dark);
+            background: var(--bg-surface-hover);
+        }
+
+        .palette-btn.answered.active {
+            background: var(--primary-light);
+            border: 2px solid var(--primary-dark);
+        }
+
+        body:not(.light-theme) .palette-btn.active {
+            border: 2px solid #ffffff;
+        }
+
+        body:not(.light-theme) .palette-btn.answered.active {
+            border: 2px solid #ffffff;
+        }
+
+        .palette-legend {
+            margin-top: auto;
+            padding-top: 1.5rem;
+            border-top: var(--border-w) solid var(--border-subtle);
+            font-size: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .legend-box {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            border: var(--border-w) solid var(--border-strong);
+            background: var(--bg-base);
+        }
+
+        .legend-box.answered {
+            background: var(--primary-light);
+            border-color: var(--primary-active);
+        }
+
+        /* Exam Footer Controls */
+        .exam-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1.5rem;
+            border-top: var(--border-w) solid var(--border-subtle);
+            margin-top: auto;
+        }
+
+        .footer-btns {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .footer-btns .btn {
+            width: auto;
+            min-width: 120px;
+        }
+
+        /* Modals & Loading */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(4, 8, 10, 0.85);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        body.light-theme .overlay {
+            background: rgba(241, 245, 249, 0.85);
+        }
+
+        .overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-surface);
+            padding: 2.5rem;
+            border-radius: var(--radius-lg);
+            border: var(--border-w) solid var(--border-subtle);
+            width: 90%;
+            max-width: 420px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .modal-btns {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--border-strong);
+            border-top: 4px solid var(--primary-light);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .exam-body {
+                grid-template-columns: 1fr;
+            }
+
+            .question-section {
+                padding: 1.5rem;
+                overflow-y: visible;
+            }
+
+            .palette-section {
+                min-height: 280px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .app-header {
+                padding: 1rem;
+            }
+
+            .view {
+                padding: 2rem 1rem;
+            }
+
+            .container {
+                padding: 1.5rem;
+            }
+
+            .exam-container {
+                height: auto;
+                gap: 1rem;
+            }
+
+            .exam-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .timer-badge {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .exam-footer {
+                flex-direction: column;
+                gap: 1.25rem;
+            }
+
+            .footer-btns {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .footer-btns .btn {
+                flex: 1;
+            }
+
+            .footer-btns .btn:first-child {
+                margin-right: 0.5rem;
+            }
+
+            .footer-btns .btn:last-child {
+                margin-left: 0.5rem;
+            }
+
+            .exam-footer>.btn-success {
+                width: 100%;
+            }
+
+            .option-label {
+                padding: 1rem;
+            }
+
+            .code-block {
+                padding: 1rem;
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Global Header -->
+    <header class="app-header">
+        <div class="brand">
+            <span class="brand-name">Gaurav Computer Classes</span>
+            <span class="brand-subtitle">Coding Examination Portal</span>
+        </div>
+        <button id="theme-toggle" class="btn-icon" aria-label="Toggle light/dark mode">
+            <svg id="theme-icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <svg id="theme-icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+        </button>
+    </header>
+
+    <!-- 1. Welcome Screen -->
+    <div id="view-welcome" class="view active">
+        <div class="container">
+            <div class="welcome-header text-center">
+                <h2>Student Portal Login</h2>
+                <p class="text-muted">Please verify your identity to access your assigned examinations.</p>
+            </div>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="student-id">Student ID</label>
+                    <input type="text" id="student-id" required placeholder="e.g. STU1001" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="student-name">Full Name</label>
+                    <input type="text" id="student-name" required placeholder="John Doe" autocomplete="off">
+                </div>
+
+                <div id="login-error"
+                    style="color: var(--danger); font-size: 0.875rem; margin-bottom: 1.5rem; display: none; text-align: center; background: var(--danger-bg); padding: 0.75rem; border-radius: var(--radius-sm); border: var(--border-w) solid rgba(239, 68, 68, 0.3);">
+                </div>
+
+                <button type="submit" class="btn">Proceed to Tests</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. Test Selection Screen -->
+    <div id="view-tests" class="view">
+        <div class="container" style="max-width: 1000px; width: 100%;">
+            <h2>Available Tests</h2>
+            <p class="text-muted" style="margin-bottom: 2rem;">Welcome, <strong style="color: var(--text-main)"
+                    id="display-student-name"></strong>. Select a test to view its instructions.</p>
+
+            <div id="tests-list">
+                <!-- Tests will be injected here via JS -->
+            </div>
+
+            <button class="btn btn-outline" style="margin-top: 2rem;" onclick="showView('view-welcome')">Back to
+                Login</button>
+        </div>
+    </div>
+
+    <!-- 3. Instructions Screen -->
+    <div id="view-instructions" class="view">
+        <div class="container" style="max-width: 700px;">
+            <h2 id="inst-test-name">Test Name</h2>
+
+            <div class="info-panel">
+                <p><strong>Subject:</strong> <span id="inst-subject"></span></p>
+                <p><strong>Topic:</strong> <span id="inst-topic"></span></p>
+                <p><strong>Duration:</strong> <span id="inst-duration"></span> minutes</p>
+                <p><strong>Total Questions:</strong> <span id="inst-total"></span></p>
+            </div>
+
+            <h3>Instructions</h3>
+            <ul class="instructions-list">
+                <li>Ensure you have a stable internet connection before starting.</li>
+                <li>Do not refresh the page or close the browser during the examination.</li>
+                <li>You can navigate between questions using the Next/Previous buttons or the Question Palette.</li>
+                <li>The test will automatically submit when the timer reaches zero.</li>
+                <li>You can change your answers anytime before final submission.</li>
+            </ul>
+
+            <div style="display: flex; gap: 1rem;">
+                <button class="btn btn-outline" onclick="showView('view-tests')">Go Back</button>
+                <button class="btn btn-success" onclick="startExam()">Start Examination</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Exam Interface -->
+    <div id="view-exam" class="view" style="padding-top: 1.5rem;">
+        <div class="exam-container">
+            <!-- Header -->
+            <div class="exam-header">
+                <div>
+                    <h3 id="exam-test-title" style="margin: 0; font-size: 1.15rem;">Test Title</h3>
+                    <div class="text-muted" style="margin-top: 0.25rem;">Question <span id="current-q-num">1</span> of
+                        <span id="total-q-num">10</span>
+                    </div>
+                </div>
+                <div class="timer-badge" id="exam-timer">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span id="time-display">00:00</span>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <div class="exam-body">
+                <!-- Question Area -->
+                <div class="question-section">
+                    <div id="q-text" class="question-text">Loading question...</div>
+                    <pre id="q-code-container" class="code-block" style="display: none;"><code id="q-code"></code></pre>
+
+                    <div class="options-grid" id="options-container">
+                        <!-- Options injected here -->
+                    </div>
+
+                    <div class="exam-footer">
+                        <div class="footer-btns">
+                            <button class="btn btn-outline" id="btn-prev" onclick="navigate(-1)">Previous</button>
+                            <button class="btn btn-outline" id="btn-next" onclick="navigate(1)">Next</button>
+                        </div>
+                        <button class="btn btn-success" style="width: auto; padding: 0.875rem 2.5rem;"
+                            onclick="confirmSubmit()">Submit Exam</button>
+                    </div>
+                </div>
+
+                <!-- Palette Area -->
+                <div class="palette-section">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 0;">Question Palette</h3>
+                    <div class="palette-grid" id="palette-grid">
+                        <!-- Palette buttons injected here -->
+                    </div>
+                    <div class="palette-legend">
+                        <div class="legend-item">
+                            <div class="legend-box answered"></div> Answered
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-box"></div> Unanswered
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. Result Screen -->
+    <div id="view-result" class="view">
+        <div class="container text-center">
+            <div
+                style="display: inline-flex; align-items: center; justify-content: center; width: 80px; height: 80px; border-radius: 50%; background: var(--success-bg); margin-bottom: 1.5rem; border: var(--border-w) solid var(--success);">
+                <svg style="color: var(--success);" width="40" height="40" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            </div>
+            <h2>Examination Submitted</h2>
+            <p class="text-muted" style="margin-bottom: 2rem;">Thank you, <span id="res-student-name"
+                    style="color: var(--text-main); font-weight: 500;"></span>. Your exam has been securely submitted.
+            </p>
+
+            <div class="info-panel" style="margin-bottom: 2.5rem;">
+                <p><strong>Test Name:</strong> <span id="res-test-name" style="color: var(--text-main);"></span></p>
+                <p><strong>Time Taken:</strong> <span id="res-time-taken" style="color: var(--text-main);"></span></p>
+                <p
+                    style="margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted); border-top: var(--border-w) solid var(--border-subtle); padding-top: 1rem;">
+                    Note: Your final score will be evaluated by the backend system and communicated separately.
+                </p>
+            </div>
+
+            <button class="btn" onclick="location.reload()">Return to Home</button>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="overlay-loading" class="overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Custom Confirm Modal -->
+    <div id="overlay-confirm" class="overlay">
+        <div class="modal">
+            <h3>Submit Exam?</h3>
+            <p class="text-muted" style="margin-top: 1rem; margin-bottom: 0;" id="confirm-msg">Are you sure you want to
+                submit your exam?</p>
+            <div class="modal-btns">
+                <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-success" onclick="executeSubmit()">Yes, Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Theme Switcher Logic ---
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const iconSun = document.getElementById('theme-icon-sun');
+        const iconMoon = document.getElementById('theme-icon-moon');
+
+        function setTheme(isLight) {
+            if (isLight) {
+                document.body.classList.add('light-theme');
+                iconMoon.style.display = 'block';
+                iconSun.style.display = 'none';
+            } else {
+                document.body.classList.remove('light-theme');
+                iconMoon.style.display = 'none';
+                iconSun.style.display = 'block';
+            }
+            localStorage.setItem('gcc-theme', isLight ? 'light' : 'dark');
+        }
+
+        // Initialize Theme (Default to dark if not set)
+        const savedTheme = localStorage.getItem('gcc-theme');
+        if (savedTheme === 'light') {
+            setTheme(true);
+        } else {
+            setTheme(false);
+        }
+
+        themeToggleBtn.addEventListener('click', () => {
+            const isLight = !document.body.classList.contains('light-theme');
+            setTheme(isLight);
+        });
+
+        // --- Configuration ---
+        const API_URL = 'https://script.google.com/macros/s/AKfycbyu6I2NW_XjxqwUXSRJ2MXYvoyDcFa6soMNy1pCzMdgC1k6Rxt92WkB5Xz4M7oeL3cM/exec';
+
+        // --- Application State ---
+        const state = {
+            studentId: '',
+            studentName: '',
+            tests: [],
+            selectedTest: null,
+            questions: [],
+            currentQIndex: 0,
+            answers: {}, // Format: { questionId: 'optionA' }
+            timeLeft: 0,
+            timerInterval: null
+        };
+
+        // --- Utility Functions ---
+        const $ = id => document.getElementById(id);
+
+        function showView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            $(viewId).classList.add('active');
+        }
+
+        function toggleLoading(show) {
+            $('overlay-loading').classList.toggle('active', show);
+        }
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        // --- Event Listeners & Core Logic ---
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // 1. Handle Login
+            $('login-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const loginError = $('login-error');
+                loginError.style.display = 'none';
+                loginError.textContent = '';
+
+                const enteredId = $('student-id').value.trim();
+                const enteredName = $('student-name').value.trim();
+
+                toggleLoading(true);
+
+                try {
+                    // Validate student via API before proceeding
+                    const response = await fetch(`${API_URL}?action=validateStudent&studentId=${encodeURIComponent(enteredId)}`);
+                    const result = await response.json();
+
+                    if (result.status === 'success') {
+                        state.studentId = result.data.studentId;
+                        // Use the name from the database if available, otherwise fallback to entered name
+                        state.studentName = result.data.name || enteredName;
+
+                        $('display-student-name').textContent = state.studentName;
+                        await fetchTests();
+                    } else {
+                        throw new Error(result.message || "Student ID not found.");
+                    }
+                } catch (error) {
+                    loginError.textContent = error.message;
+                    loginError.style.display = 'block';
+                    toggleLoading(false);
+                }
+            });
+        });
+
+        // 2. Fetch published tests
+        async function fetchTests() {
+            toggleLoading(true);
+            try {
+                const response = await fetch(`${API_URL}?action=getTests`);
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    state.tests = result.data;
+                    renderTests();
+                    showView('view-tests');
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                alert("Failed to load tests. Ensure Apps Script Web App is deployed and accessible.");
+                console.error(error);
+            }
+            toggleLoading(false);
+        }
+
+        function renderTests() {
+            const container = $('tests-list');
+            container.innerHTML = '';
+
+            if (state.tests.length === 0) {
+                container.innerHTML = '<p class="text-muted">No published tests available at the moment.</p>';
+                return;
+            }
+
+            state.tests.forEach(test => {
+                const card = document.createElement('div');
+                card.className = 'test-card';
+                // Emojis replaced with clean textual presentation as per UI requirements
+                card.innerHTML = `
+                    <h3>${test.testName}</h3>
+                    <div class="test-meta">
+                        <span class="meta-badge">Subject: ${test.subject} - ${test.topic}</span>
+                        <span class="meta-badge">Duration: ${test.duration} mins</span>
+                        <span class="meta-badge">Questions: ${test.totalQuestions}</span>
+                    </div>
+                `;
+                card.onclick = () => showInstructions(test);
+                container.appendChild(card);
+            });
+        }
+
+        // 3. Show Instructions
+        function showInstructions(test) {
+            state.selectedTest = test;
+
+            $('inst-test-name').textContent = test.testName;
+            $('inst-subject').textContent = test.subject;
+            $('inst-topic').textContent = test.topic;
+            $('inst-duration').textContent = test.duration;
+            $('inst-total').textContent = test.totalQuestions;
+
+            showView('view-instructions');
+        }
+
+        // 4. Start Exam
+        async function startExam() {
+            toggleLoading(true);
+            try {
+                const response = await fetch(`${API_URL}?action=getQuestions&testId=${state.selectedTest.testId}`);
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    state.questions = result.data;
+                    state.currentQIndex = 0;
+                    state.answers = {};
+                    state.timeLeft = parseInt(state.selectedTest.duration) * 60;
+
+                    if (state.questions.length === 0) throw new Error("No questions found for this test.");
+
+                    initExamUI();
+                    showView('view-exam');
+                    startTimer();
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                alert("Failed to load questions: " + error.message);
+            }
+            toggleLoading(false);
+        }
+
+        function initExamUI() {
+            $('exam-test-title').textContent = state.selectedTest.testName;
+            $('total-q-num').textContent = state.questions.length;
+            renderPalette();
+            renderQuestion();
+        }
+
+        // 5. Timer Logic
+        function startTimer() {
+            if (state.timerInterval) clearInterval(state.timerInterval);
+
+            updateTimerDisplay();
+
+            state.timerInterval = setInterval(() => {
+                state.timeLeft--;
+                updateTimerDisplay();
+
+                if (state.timeLeft <= 300) { // 5 minutes warning
+                    $('exam-timer').classList.add('warning');
+                }
+
+                if (state.timeLeft <= 0) {
+                    clearInterval(state.timerInterval);
+                    autoSubmit();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            $('time-display').textContent = formatTime(state.timeLeft);
+        }
+
+        // 6. Question Rendering & Navigation
+        function renderQuestion() {
+            const q = state.questions[state.currentQIndex];
+            $('current-q-num').textContent = state.currentQIndex + 1;
+
+            // Render Text & Code
+            $('q-text').textContent = q.question;
+
+            const codeContainer = $('q-code-container');
+            if (q.code && q.code.trim() !== '') {
+                codeContainer.style.display = 'block';
+                $('q-code').textContent = q.code;
+            } else {
+                codeContainer.style.display = 'none';
+            }
+
+            // Render Options
+            const optsContainer = $('options-container');
+            optsContainer.innerHTML = '';
+
+            const options = [
+                { id: 'optionA', text: q.optionA },
+                { id: 'optionB', text: q.optionB },
+                { id: 'optionC', text: q.optionC },
+                { id: 'optionD', text: q.optionD }
+            ];
+
+            const savedAnswer = state.answers[q.questionId];
+
+            options.forEach(opt => {
+                if (!opt.text) return; // Skip empty options
+
+                const isSelected = savedAnswer === opt.id;
+
+                const label = document.createElement('label');
+                label.className = `option-label ${isSelected ? 'selected' : ''}`;
+
+                // Modified to use clean custom radio borders instead of default styling
+                label.innerHTML = `
+                    <input type="radio" class="hidden-radio" name="q-option" value="${opt.id}" ${isSelected ? 'checked' : ''}>
+                    <div class="custom-radio"></div>
+                    <span class="option-text">${opt.text}</span>
+                `;
+
+                label.onclick = () => selectOption(q.questionId, opt.id);
+                optsContainer.appendChild(label);
+            });
+
+            // Update Navigation Buttons
+            $('btn-prev').disabled = state.currentQIndex === 0;
+            $('btn-next').disabled = state.currentQIndex === state.questions.length - 1;
+
+            updatePaletteHighlight();
+        }
+
+        function selectOption(questionId, optionId) {
+            state.answers[questionId] = optionId;
+            renderQuestion(); // Re-render to show selection
+            renderPalette();  // Update palette colors
+        }
+
+        function navigate(direction) {
+            const newIndex = state.currentQIndex + direction;
+            if (newIndex >= 0 && newIndex < state.questions.length) {
+                state.currentQIndex = newIndex;
+                renderQuestion();
+            }
+        }
+
+        function jumpToQuestion(index) {
+            state.currentQIndex = index;
+            renderQuestion();
+        }
+
+        // 7. Palette Logic
+        function renderPalette() {
+            const grid = $('palette-grid');
+            grid.innerHTML = '';
+
+            state.questions.forEach((q, index) => {
+                const btn = document.createElement('div');
+                const isAnswered = !!state.answers[q.questionId];
+
+                btn.className = `palette-btn ${isAnswered ? 'answered' : ''}`;
+                btn.textContent = index + 1;
+                btn.onclick = () => jumpToQuestion(index);
+
+                // Keep track of DOM element for highlighting
+                btn.id = `pal-btn-${index}`;
+                grid.appendChild(btn);
+            });
+            updatePaletteHighlight();
+        }
+
+        function updatePaletteHighlight() {
+            document.querySelectorAll('.palette-btn').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = $(`pal-btn-${state.currentQIndex}`);
+            if (activeBtn) activeBtn.classList.add('active');
+        }
+
+        // 8. Submission Logic
+        function confirmSubmit() {
+            const answeredCount = Object.keys(state.answers).length;
+            const total = state.questions.length;
+
+            if (answeredCount < total) {
+                $('confirm-msg').textContent = `You have answered ${answeredCount} out of ${total} questions. Are you sure you want to submit?`;
+            } else {
+                $('confirm-msg').textContent = `Are you sure you want to submit your exam?`;
+            }
+            $('overlay-confirm').classList.add('active');
+        }
+
+        function closeModal() {
+            $('overlay-confirm').classList.remove('active');
+        }
+
+        function autoSubmit() {
+            $('confirm-msg').textContent = "Time is up! Submitting your exam automatically...";
+            $('overlay-confirm').classList.add('active');
+
+            // Remove buttons so user can't cancel auto-submit
+            document.querySelector('.modal-btns').style.display = 'none';
+
+            setTimeout(() => {
+                executeSubmit();
+            }, 2000);
+        }
+
+        async function executeSubmit() {
+            closeModal();
+            clearInterval(state.timerInterval);
+            toggleLoading(true);
+
+            const totalDurationSecs = parseInt(state.selectedTest.duration) * 60;
+            const timeTakenSecs = totalDurationSecs - state.timeLeft;
+
+            const payload = {
+                action: 'submitResult',
+                data: {
+                    testId: state.selectedTest.testId,
+                    testName: state.selectedTest.testName,
+                    studentId: state.studentId,
+                    studentName: state.studentName,
+                    timeTaken: formatTime(timeTakenSecs),
+                    score: "Evaluated Server-Side",
+                    total: state.questions.length,
+                    percentage: "Pending",
+                    studentAnswers: state.answers // Backend evaluates this
+                }
+            };
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' } // text/plain prevents CORS preflight issues in GAS
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    showResultScreen(payload.data.timeTaken);
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                alert("Submission failed. Error: " + error.message);
+            }
+            toggleLoading(false);
+        }
+
+        function showResultScreen(timeTaken) {
+            $('res-student-name').textContent = state.studentName;
+            $('res-test-name').textContent = state.selectedTest.testName;
+            $('res-time-taken').textContent = timeTaken;
+            showView('view-result');
+        }
+
+    </script>
+</body>
+
+</html>
