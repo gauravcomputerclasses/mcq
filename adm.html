@@ -38,7 +38,6 @@
             min-height: 100vh;
         }
 
-        /* Layout */
         .sidebar {
             width: 260px;
             background-color: var(--primary);
@@ -99,7 +98,6 @@
             max-width: calc(100vw - 260px);
         }
 
-        /* Views */
         .view {
             display: none;
             animation: fadeIn 0.3s ease-in-out;
@@ -121,7 +119,6 @@
             }
         }
 
-        /* Typography & Utilities */
         h2 {
             margin-bottom: 1.5rem;
             color: var(--primary);
@@ -139,7 +136,6 @@
             margin-bottom: 1.5rem;
         }
 
-        /* Buttons */
         .btn {
             background-color: var(--accent);
             color: white;
@@ -174,7 +170,6 @@
             font-size: 0.85rem;
         }
 
-        /* Dashboard Cards */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -203,7 +198,6 @@
             color: var(--primary);
         }
 
-        /* Tables */
         .table-container {
             background: var(--surface);
             border-radius: var(--radius);
@@ -254,7 +248,6 @@
             color: #92400e;
         }
 
-        /* Forms & Inputs */
         .form-group {
             margin-bottom: 1rem;
         }
@@ -281,7 +274,6 @@
             border-color: var(--accent);
         }
 
-        /* Modal */
         .overlay {
             position: fixed;
             top: 0;
@@ -326,7 +318,6 @@
             gap: 1rem;
         }
 
-        /* Loading Spinner */
         .spinner {
             width: 40px;
             height: 40px;
@@ -364,26 +355,21 @@
 
 <body>
 
-    <!-- Sidebar Navigation -->
     <aside class="sidebar">
         <div class="sidebar-header">Admin Portal</div>
         <ul class="nav-menu">
             <li class="nav-item active" onclick="switchTab('dashboard', this)">📊 Dashboard</li>
             <li class="nav-item" onclick="switchTab('tests', this)">📝 Manage Tests</li>
             <li class="nav-item" onclick="switchTab('results', this)">🏆 Student Results</li>
+            <li class="nav-item" onclick="switchTab('students', this)">👥 Manage Students</li>
             <li
                 style="margin-top: 2rem; padding: 0 1.5rem; text-transform: uppercase; font-size: 0.75rem; color: #64748b; font-weight: bold;">
                 External Data</li>
-            <!-- Opens the Google Sheet -->
-            <li class="nav-item external-link" onclick="openSheet()">
-                🗃️ Open Question Bank ↗
-            </li>
+            <li class="nav-item external-link" onclick="openSheet()">🗃️ Open Question Bank ↗</li>
         </ul>
     </aside>
 
-    <!-- Main Content Area -->
     <main class="main-content">
-
         <!-- Dashboard View -->
         <div id="view-dashboard" class="view active">
             <h2>Dashboard Overview</h2>
@@ -405,7 +391,6 @@
                     <div class="value" id="stat-avg-score">0%</div>
                 </div>
             </div>
-
             <div class="table-container">
                 <div style="padding: 1.5rem; border-bottom: 1px solid var(--border);">
                     <h3 style="margin: 0; font-size: 1.1rem;">Recent Results</h3>
@@ -419,9 +404,7 @@
                             <th>Score</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <!-- Injected via JS -->
-                    </tbody>
+                    <tbody></tbody>
                 </table>
             </div>
         </div>
@@ -445,9 +428,7 @@
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="tests-table-body">
-                        <!-- Injected via JS -->
-                    </tbody>
+                    <tbody id="tests-table-body"></tbody>
                 </table>
             </div>
         </div>
@@ -459,7 +440,6 @@
                 <div>
                     <select id="filter-test" onchange="renderResults()" style="width: 250px;">
                         <option value="all">All Tests</option>
-                        <!-- Injected via JS -->
                     </select>
                 </div>
             </div>
@@ -474,15 +454,36 @@
                             <th>Score</th>
                             <th>Percentage</th>
                             <th>Time Taken</th>
+                            <th>Actions</th> <!-- NEW ACTIONS COLUMN -->
                         </tr>
                     </thead>
-                    <tbody id="results-table-body">
-                        <!-- Injected via JS -->
-                    </tbody>
+                    <tbody id="results-table-body"></tbody>
                 </table>
             </div>
         </div>
 
+        <!-- NEW: Manage Students View -->
+        <div id="view-students" class="view">
+            <div class="header-actions">
+                <h2>Manage Students</h2>
+                <button class="btn" onclick="openStudentModal()">+ Add Student</button>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Mobile</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="students-table-body"></tbody>
+                </table>
+            </div>
+        </div>
     </main>
 
     <!-- Modal: Create / Edit Test -->
@@ -495,34 +496,18 @@
             </div>
             <form id="test-form">
                 <input type="hidden" id="form-test-id">
-
-                <div class="form-group">
-                    <label>Test Name</label>
-                    <input type="text" id="form-name" required placeholder="e.g. Python Basics Exam">
-                </div>
-
+                <div class="form-group"><label>Test Name</label><input type="text" id="form-name" required
+                        placeholder="e.g. Python Basics Exam"></div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                    <div class="form-group">
-                        <label>Subject</label>
-                        <input type="text" id="form-subject" required placeholder="e.g. Python">
-                    </div>
-                    <div class="form-group">
-                        <label>Topic</label>
-                        <input type="text" id="form-topic" required placeholder="e.g. Loops & Arrays">
-                    </div>
+                    <div class="form-group"><label>Subject</label><input type="text" id="form-subject" required></div>
+                    <div class="form-group"><label>Topic</label><input type="text" id="form-topic" required></div>
                 </div>
-
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                    <div class="form-group">
-                        <label>Duration (minutes)</label>
-                        <input type="number" id="form-duration" required min="1" placeholder="30">
-                    </div>
-                    <div class="form-group">
-                        <label>Total Questions</label>
-                        <input type="number" id="form-questions" required min="1" placeholder="20">
-                    </div>
+                    <div class="form-group"><label>Duration (minutes)</label><input type="number" id="form-duration"
+                            required min="1"></div>
+                    <div class="form-group"><label>Total Questions</label><input type="number" id="form-questions"
+                            required min="1"></div>
                 </div>
-
                 <div class="form-group">
                     <label>Status</label>
                     <select id="form-status" required>
@@ -530,7 +515,6 @@
                         <option value="Published">Published</option>
                     </select>
                 </div>
-
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline" onclick="closeTestModal()">Cancel</button>
                     <button type="submit" class="btn">Save Test</button>
@@ -539,82 +523,112 @@
         </div>
     </div>
 
-    <!-- Loading Screen -->
+    <!-- NEW MODAL: Detailed Result View -->
+    <div id="result-detail-modal" class="overlay">
+        <div class="modal" style="max-width: 800px; display: flex; flex-direction: column; max-height: 90vh;">
+            <div class="modal-header" style="flex-shrink: 0;">
+                <h3 id="det-modal-title">Student Result Details</h3>
+                <button class="btn btn-outline btn-sm" onclick="closeResultDetailModal()"
+                    style="border:none; font-size: 1.2rem;">&times;</button>
+            </div>
+
+            <div
+                style="text-align: left; margin-bottom: 1rem; background: var(--bg-color); padding: 1rem; border-radius: var(--radius); border: 1px solid var(--border); flex-shrink: 0;">
+                <p><strong>Student:</strong> <span id="det-student"></span></p>
+                <p><strong>Test:</strong> <span id="det-test"></span></p>
+                <p><strong>Score:</strong> <span id="det-score"
+                        style="font-weight: bold; color: var(--success);"></span></p>
+            </div>
+
+            <!-- Scrollable review container -->
+            <div id="det-review-list" style="overflow-y: auto; text-align: left; padding-right: 0.5rem; flex-grow: 1;">
+            </div>
+
+            <div class="modal-footer" style="flex-shrink: 0; margin-top: 1rem;">
+                <button type="button" class="btn btn-outline" onclick="closeResultDetailModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW MODAL: Manage Student -->
+    <div id="student-modal" class="overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="student-modal-title">Add New Student</h3>
+                <button class="btn btn-outline btn-sm" onclick="closeStudentModal()"
+                    style="border:none; font-size: 1.2rem;">&times;</button>
+            </div>
+            <form id="student-form">
+                <div class="form-group"><label>Student ID</label><input type="text" id="form-student-id" required
+                        placeholder="STU1001"></div>
+                <div class="form-group"><label>Full Name</label><input type="text" id="form-student-name" required
+                        placeholder="John Doe"></div>
+                <div class="form-group"><label>Email</label><input type="email" id="form-student-email" required
+                        placeholder="john@example.com"></div>
+                <div class="form-group"><label>Mobile</label><input type="text" id="form-student-mobile"
+                        placeholder="+1234567890"></div>
+                <div class="form-group">
+                    <label>Status (Active?)</label>
+                    <select id="form-student-status" required>
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeStudentModal()">Cancel</button>
+                    <button type="submit" class="btn">Save Student</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div id="global-loader" class="loading-screen">
         <div class="spinner"></div>
         <p style="margin-top: 1rem; color: var(--primary); font-weight: 500;">Syncing with Database...</p>
     </div>
 
     <script>
-        // --- CONFIGURATION ---
-        // SAME Apps Script URL used for the student portal.
         const API_URL = 'https://script.google.com/macros/s/AKfycbyu6I2NW_XjxqwUXSRJ2MXYvoyDcFa6soMNy1pCzMdgC1k6Rxt92WkB5Xz4M7oeL3cM/exec';
+        const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/14Ua9X-8tQ32aN6K9xT5O6R8eFqgQ_O-lU6mJzC-V4e4/edit';
 
-        // IMPORTANT: Replace this link with your actual Google Sheet URL so admins can manage questions.
-        const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1L61ufwVz62jegigR1iN7iCbq3sAQ5xUNgMcZXybNnnA/edit?gid=946088164#gid=946088164';
+        let adminState = { tests: [], results: [], students: [], questions: [] };
 
-        // --- STATE ---
-        let adminState = {
-            tests: [],
-            results: [],
-            students: []
-        };
-
-        // --- INITIALIZATION ---
         document.addEventListener('DOMContentLoaded', () => {
             fetchAdminData();
-
-            // Handle form submission
             document.getElementById('test-form').addEventListener('submit', handleTestSubmit);
+            document.getElementById('student-form').addEventListener('submit', handleStudentSubmit); // NEW listener
         });
 
-        // --- NAVIGATION ---
         function switchTab(viewId, element) {
-            // Update active link
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             element.classList.add('active');
-
-            // Update active view
             document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
             document.getElementById(`view-${viewId}`).classList.add('active');
         }
 
-        function openSheet() {
-            window.open(GOOGLE_SHEET_URL, '_blank');
-        }
+        function openSheet() { window.open(GOOGLE_SHEET_URL, '_blank'); }
 
-        // --- API CALLS ---
         async function fetchAdminData() {
             showLoader(true);
             try {
-                // We use a new endpoint 'getAdminData' that we added to Code.gs
                 const response = await fetch(`${API_URL}?action=getAdminData`);
                 const result = await response.json();
-
                 if (result.status === 'success') {
                     adminState.tests = result.data.tests || [];
                     adminState.results = result.data.results || [];
                     adminState.students = result.data.students || [];
-
+                    adminState.questions = result.data.questions || [];
                     refreshUI();
-                } else {
-                    alert("Error fetching data: " + result.message);
-                }
-            } catch (error) {
-                console.error(error);
-                alert("Failed to connect to the backend. Ensure your Apps Script is correctly updated and deployed.");
-            }
+                } else { alert("Error fetching data: " + result.message); }
+            } catch (error) { console.error(error); alert("Failed to connect to the backend."); }
             showLoader(false);
         }
 
         async function handleTestSubmit(e) {
             e.preventDefault();
             showLoader(true);
-
-            const testId = document.getElementById('form-test-id').value;
-
             const testData = {
-                testId: testId || generateId(),
+                testId: document.getElementById('form-test-id').value || 'TST' + Math.random().toString(36).substring(2, 6).toUpperCase(),
                 testName: document.getElementById('form-name').value,
                 subject: document.getElementById('form-subject').value,
                 topic: document.getElementById('form-topic').value,
@@ -622,180 +636,222 @@
                 totalQuestions: document.getElementById('form-questions').value,
                 status: document.getElementById('form-status').value
             };
-
-            const payload = {
-                action: 'saveTest',
-                data: testData
-            };
-
             try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify(payload),
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-                });
-
+                const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveTest', data: testData }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
                 const result = await response.json();
-                if (result.status === 'success') {
-                    closeTestModal();
-                    await fetchAdminData(); // Refresh all data to sync state
-                } else {
-                    throw new Error(result.message);
-                }
-            } catch (error) {
-                alert("Failed to save test. " + error.message);
-            }
+                if (result.status === 'success') { closeTestModal(); await fetchAdminData(); } else { throw new Error(result.message); }
+            } catch (error) { alert("Failed to save test. " + error.message); }
             showLoader(false);
         }
 
-        // --- RENDER FUNCTIONS ---
         function refreshUI() {
-            renderDashboard();
-            renderTests();
-            populateTestFilter();
-            renderResults();
+            renderDashboard(); renderTests(); populateTestFilter(); renderResults(); renderStudents();
         }
 
         function renderDashboard() {
-            // Cards
             document.getElementById('stat-tests').textContent = adminState.tests.length;
-
-            // Unique students from results (or use adminState.students length)
             const uniqueStudents = new Set(adminState.results.map(r => r.studentId)).size;
             document.getElementById('stat-students').textContent = uniqueStudents;
-
             document.getElementById('stat-attempts').textContent = adminState.results.length;
-
-            // Avg Score Calculation (Parses percentage string like '80%' to float)
-            let totalPct = 0;
-            let validResults = 0;
+            let totalPct = 0; let validResults = 0;
             adminState.results.forEach(r => {
                 if (r.percentage && r.percentage !== 'Pending') {
                     let val = parseFloat(r.percentage);
-                    if (!isNaN(val)) {
-                        totalPct += val;
-                        validResults++;
-                    }
+                    if (!isNaN(val)) { totalPct += val; validResults++; }
                 }
             });
-            const avg = validResults > 0 ? (totalPct / validResults).toFixed(1) + '%' : 'N/A';
-            document.getElementById('stat-avg-score').textContent = avg;
+            document.getElementById('stat-avg-score').textContent = validResults > 0 ? (totalPct / validResults).toFixed(1) + '%' : 'N/A';
 
-            // Recent Results Table (Last 5)
             const recent = [...adminState.results].reverse().slice(0, 5);
-            const tbody = document.querySelector('#dashboard-results-table tbody');
-            tbody.innerHTML = recent.map(r => `
-                <tr>
-                    <td>${formatDate(r.timestamp)}</td>
-                    <td>${r.studentName || 'Unknown'}</td>
-                    <td>${r.testName || '-'}</td>
-                    <td><span style="font-weight: 500; color: var(--success);">${r.score || 'Pending'}</span></td>
-                </tr>
+            document.querySelector('#dashboard-results-table tbody').innerHTML = recent.map(r => `
+                <tr><td>${formatDate(r.timestamp)}</td><td>${r.studentName || 'Unknown'}</td><td>${r.testName || '-'}</td>
+                <td><span style="font-weight: 500; color: var(--success);">${r.score || 'Pending'}</span></td></tr>
             `).join('') || '<tr><td colspan="4" class="text-center text-muted">No results found</td></tr>';
         }
 
         function renderTests() {
-            const tbody = document.getElementById('tests-table-body');
-            tbody.innerHTML = adminState.tests.map(t => `
-                <tr>
-                    <td class="text-muted" style="font-size:0.85rem;">${t.testId}</td>
-                    <td style="font-weight: 500;">${t.testName}</td>
-                    <td>${t.subject} <br><span class="text-muted" style="font-size:0.8rem">${t.topic}</span></td>
-                    <td>${t.totalQuestions}</td>
-                    <td>${t.duration} m</td>
-                    <td>
-                        <span class="badge ${t.status?.toLowerCase() === 'published' ? 'published' : 'draft'}">
-                            ${t.status}
-                        </span>
-                    </td>
-                    <td>
-                        <button class="btn btn-outline btn-sm" onclick='editTest(${JSON.stringify(t)})'>Edit</button>
-                    </td>
-                </tr>
+            document.getElementById('tests-table-body').innerHTML = adminState.tests.map(t => `
+                <tr><td class="text-muted" style="font-size:0.85rem;">${t.testId}</td><td style="font-weight: 500;">${t.testName}</td>
+                <td>${t.subject} <br><span class="text-muted" style="font-size:0.8rem">${t.topic}</span></td>
+                <td>${t.totalQuestions}</td><td>${t.duration} m</td>
+                <td><span class="badge ${t.status?.toLowerCase() === 'published' ? 'published' : 'draft'}">${t.status}</span></td>
+                <td><button class="btn btn-outline btn-sm" onclick='editTest(${JSON.stringify(t)})'>Edit</button></td></tr>
             `).join('') || '<tr><td colspan="7" class="text-center text-muted">No tests found. Create one to begin.</td></tr>';
         }
 
         function populateTestFilter() {
             const select = document.getElementById('filter-test');
-            // Keep the "All Tests" option, remove the rest
-            select.innerHTML = '<option value="all">All Tests</option>';
-
-            adminState.tests.forEach(t => {
-                select.innerHTML += `<option value="${t.testId}">${t.testName}</option>`;
-            });
+            select.innerHTML = '<option value="all">All Tests</option>' + adminState.tests.map(t => `<option value="${t.testId}">${t.testName}</option>`).join('');
         }
 
         function renderResults() {
             const filterValue = document.getElementById('filter-test').value;
-            const tbody = document.getElementById('results-table-body');
-
-            let filtered = adminState.results;
-            if (filterValue !== 'all') {
-                filtered = filtered.filter(r => r.testId == filterValue);
-            }
-
-            // Show latest first
+            let filtered = filterValue !== 'all' ? adminState.results.filter(r => r.testId == filterValue) : adminState.results;
             filtered.reverse();
 
-            tbody.innerHTML = filtered.map(r => `
+            document.getElementById('results-table-body').innerHTML = filtered.map(r => `
                 <tr>
                     <td class="text-muted" style="font-size:0.9rem;">${formatDate(r.timestamp)}</td>
-                    <td style="font-size:0.85rem;">${r.studentId}</td>
-                    <td style="font-weight: 500;">${r.studentName}</td>
-                    <td>${r.testName}</td>
-                    <td style="font-weight: 600;">${r.score} / ${r.total}</td>
-                    <td>
-                        <span style="color: ${parseFloat(r.percentage) >= 50 ? 'var(--success)' : 'var(--danger)'}">
-                            ${r.percentage || 'N/A'}
-                        </span>
-                    </td>
+                    <td style="font-size:0.85rem;">${r.studentId}</td><td style="font-weight: 500;">${r.studentName}</td>
+                    <td>${r.testName}</td><td style="font-weight: 600;">${r.score} / ${r.total}</td>
+                    <td><span style="color: ${parseFloat(r.percentage) >= 50 ? 'var(--success)' : 'var(--danger)'}">${r.percentage || 'N/A'}</span></td>
                     <td class="text-muted">${r.timeTaken}</td>
+                    <td><button class="btn btn-outline btn-sm" onclick="viewDetailedResult('${r.resultId}')">View</button></td>
                 </tr>
-            `).join('') || '<tr><td colspan="7" class="text-center text-muted">No results found for this selection.</td></tr>';
+            `).join('') || '<tr><td colspan="8" class="text-center text-muted">No results found for this selection.</td></tr>';
         }
 
-        // --- MODAL & UTILS ---
+        // NEW: Render Students
+        function renderStudents() {
+            document.getElementById('students-table-body').innerHTML = adminState.students.map(s => {
+                const isActive = String(s.active).toLowerCase() !== 'false' && String(s.active) !== '0' && s.active !== '';
+                return `
+                <tr>
+                    <td style="font-weight: 500;">${s.studentId}</td>
+                    <td>${s.name}</td>
+                    <td>${s.email || '-'}</td>
+                    <td>${s.mobile || '-'}</td>
+                    <td><span class="badge ${isActive ? 'published' : 'draft'}">${isActive ? 'Active' : 'Inactive'}</span></td>
+                    <td><button class="btn btn-outline btn-sm" onclick='editStudent(${JSON.stringify(s)})'>Edit</button></td>
+                </tr>
+            `}).join('') || '<tr><td colspan="6" class="text-center text-muted">No students found.</td></tr>';
+        }
+
+        // NEW: Submit Student to Backend
+        async function handleStudentSubmit(e) {
+            e.preventDefault();
+            showLoader(true);
+            const studentData = {
+                studentId: document.getElementById('form-student-id').value,
+                name: document.getElementById('form-student-name').value,
+                email: document.getElementById('form-student-email').value,
+                mobile: document.getElementById('form-student-mobile').value,
+                active: document.getElementById('form-student-status').value
+            };
+            try {
+                const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveStudent', data: studentData }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
+                const result = await response.json();
+                if (result.status === 'success') { closeStudentModal(); await fetchAdminData(); } else { throw new Error(result.message); }
+            } catch (error) { alert("Failed to save student. " + error.message); }
+            showLoader(false);
+        }
+
+        // NEW: Student Modal Controls
+        function openStudentModal() {
+            document.getElementById('student-form').reset();
+            document.getElementById('form-student-id').readOnly = false; // Allow editing ID for new
+            document.getElementById('student-modal-title').textContent = 'Add New Student';
+            document.getElementById('student-modal').classList.add('active');
+        }
+
+        function editStudent(studentData) {
+            document.getElementById('student-modal-title').textContent = 'Edit Student';
+            document.getElementById('form-student-id').value = studentData.studentId;
+            document.getElementById('form-student-id').readOnly = true; // Prevent changing ID
+            document.getElementById('form-student-name').value = studentData.name;
+            document.getElementById('form-student-email').value = studentData.email;
+            document.getElementById('form-student-mobile').value = studentData.mobile;
+
+            const isActive = String(studentData.active).toLowerCase() !== 'false' && String(studentData.active) !== '0' && studentData.active !== '';
+            document.getElementById('form-student-status').value = isActive ? 'true' : 'false';
+
+            document.getElementById('student-modal').classList.add('active');
+        }
+
+        function closeStudentModal() { document.getElementById('student-modal').classList.remove('active'); }
+
+        // Detailed Result Viewer Logic
+        function viewDetailedResult(resultId) {
+            const result = adminState.results.find(r => r.resultId === resultId);
+            if (!result) return;
+
+            document.getElementById('det-student').textContent = `${result.studentName} (${result.studentId})`;
+            document.getElementById('det-test').textContent = result.testName;
+            document.getElementById('det-score').textContent = `${result.score} / ${result.total} (${result.percentage})`;
+
+            const list = document.getElementById('det-review-list');
+            list.innerHTML = '';
+
+            let answersObj = {};
+            try {
+                if (result.studentAnswers) { answersObj = JSON.parse(result.studentAnswers); }
+            } catch (e) { console.error("Could not parse student answers", e); }
+
+            const testQuestions = adminState.questions.filter(q => q.testId == result.testId);
+
+            if (testQuestions.length === 0) {
+                list.innerHTML = '<p class="text-muted">No question data found for this test.</p>';
+            } else {
+                testQuestions.forEach((q, index) => {
+                    const studentAnsKey = answersObj[q.questionId];
+
+                    const getOptText = (key) => {
+                        if (!key) return 'Not Answered';
+                        let k = key.toString().trim().toLowerCase();
+                        if (k === 'a' || k === 'optiona') return q.optionA;
+                        if (k === 'b' || k === 'optionb') return q.optionB;
+                        if (k === 'c' || k === 'optionc') return q.optionC;
+                        if (k === 'd' || k === 'optiond') return q.optionD;
+                        return key;
+                    };
+
+                    const selectedText = getOptText(studentAnsKey);
+                    const correctText = getOptText(q.answer);
+
+                    let isCorrect = false;
+                    if (studentAnsKey && q.answer) {
+                        let sAns = studentAnsKey.toString().trim().toLowerCase();
+                        let cAns = q.answer.toString().trim().toLowerCase();
+                        if (sAns === 'a') sAns = 'optiona'; else if (sAns === 'b') sAns = 'optionb';
+                        else if (sAns === 'c') sAns = 'optionc'; else if (sAns === 'd') sAns = 'optiond';
+                        if (cAns === 'a') cAns = 'optiona'; else if (cAns === 'b') cAns = 'optionb';
+                        else if (cAns === 'c') cAns = 'optionc'; else if (cAns === 'd') cAns = 'optiond';
+
+                        if (sAns === cAns) isCorrect = true;
+                    }
+
+                    const card = document.createElement('div');
+                    card.style.cssText = 'background: var(--surface); padding: 1.25rem; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 1rem;';
+
+                    card.innerHTML = `
+                        <p style="font-weight: 600; margin-bottom: 0.75rem;">Q${index + 1}: ${q.question}</p>
+                        ${q.code ? `<pre style="background: #0f172a; color: #e2e8f0; padding: 1rem; border-radius: var(--radius); font-family: monospace; font-size: 0.85rem; margin-bottom: 1rem; overflow-x: auto; white-space: pre-wrap;"><code>${q.code}</code></pre>` : ''}
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.95rem;">
+                            <div style="color: ${isCorrect ? 'var(--success)' : 'var(--danger)'};">
+                                <strong>Student Answer:</strong> ${selectedText}
+                            </div>
+                            <div style="color: var(--success);">
+                                <strong>Correct Answer:</strong> ${correctText}
+                            </div>
+                            <div>
+                                <strong>Marks:</strong> ${isCorrect ? '1 / 1' : '0 / 1'}
+                            </div>
+                        </div>
+                    `;
+                    list.appendChild(card);
+                });
+            }
+            document.getElementById('result-detail-modal').classList.add('active');
+        }
+
+        function closeResultDetailModal() { document.getElementById('result-detail-modal').classList.remove('active'); }
+
         function openTestModal() {
-            document.getElementById('test-form').reset();
-            document.getElementById('form-test-id').value = '';
-            document.getElementById('modal-title').textContent = 'Create New Test';
-            document.getElementById('test-modal').classList.add('active');
+            document.getElementById('test-form').reset(); document.getElementById('form-test-id').value = '';
+            document.getElementById('modal-title').textContent = 'Create New Test'; document.getElementById('test-modal').classList.add('active');
         }
-
         function editTest(testData) {
-            document.getElementById('modal-title').textContent = 'Edit Test';
-            document.getElementById('form-test-id').value = testData.testId;
-            document.getElementById('form-name').value = testData.testName;
-            document.getElementById('form-subject').value = testData.subject;
-            document.getElementById('form-topic').value = testData.topic;
-            document.getElementById('form-duration').value = testData.duration;
-            document.getElementById('form-questions').value = testData.totalQuestions;
-
-            // Normalize status case
-            const statusSelect = document.getElementById('form-status');
-            const statusVal = testData.status?.toLowerCase() === 'published' ? 'Published' : 'Draft';
-            statusSelect.value = statusVal;
-
+            document.getElementById('modal-title').textContent = 'Edit Test'; document.getElementById('form-test-id').value = testData.testId;
+            document.getElementById('form-name').value = testData.testName; document.getElementById('form-subject').value = testData.subject;
+            document.getElementById('form-topic').value = testData.topic; document.getElementById('form-duration').value = testData.duration;
+            document.getElementById('form-questions').value = testData.totalQuestions; document.getElementById('form-status').value = testData.status?.toLowerCase() === 'published' ? 'Published' : 'Draft';
             document.getElementById('test-modal').classList.add('active');
         }
-
-        function closeTestModal() {
-            document.getElementById('test-modal').classList.remove('active');
-        }
-
-        function showLoader(show) {
-            document.getElementById('global-loader').style.display = show ? 'flex' : 'none';
-        }
-
-        function generateId() {
-            return 'TST' + Math.random().toString(36).substring(2, 6).toUpperCase();
-        }
-
+        function closeTestModal() { document.getElementById('test-modal').classList.remove('active'); }
+        function showLoader(show) { document.getElementById('global-loader').style.display = show ? 'flex' : 'none'; }
         function formatDate(dateString) {
-            if (!dateString) return '-';
-            const d = new Date(dateString);
-            if (isNaN(d)) return dateString;
-            return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            if (!dateString) return '-'; const d = new Date(dateString);
+            return isNaN(d) ? dateString : d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
     </script>
 </body>

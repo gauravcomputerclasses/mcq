@@ -11,6 +11,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
         rel="stylesheet">
 
+    <!-- jsPDF for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Email Notification Logic -->
+    <script src="email.js"></script>
+
     <style>
         /* Modern Dark Mode Design System based on #16363E (Default) */
         :root {
@@ -346,15 +351,20 @@
             height: 100%;
         }
 
-        .test-card:hover {
+        .test-card.active-test:hover {
             border-color: var(--primary-light);
             background-color: var(--bg-surface-hover);
             transform: translateY(-2px);
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
         }
 
-        body.light-theme .test-card:hover {
+        body.light-theme .test-card.active-test:hover {
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+        }
+
+        .test-card.locked-test {
+            opacity: 0.85;
+            cursor: default;
         }
 
         .test-card h3 {
@@ -477,6 +487,7 @@
         /* Code Snippet Styles */
         .code-block {
             background: #060a0c;
+            /* Keep dark terminal feel even in light mode */
             color: #e2e8f0;
             padding: 1rem;
             border-radius: var(--radius-md);
@@ -977,9 +988,9 @@
         </div>
     </div>
 
-    <!-- 5. Result Screen -->
+    <!-- 5. Result Screen (Completely Redesigned) -->
     <div id="view-result" class="view">
-        <div class="container text-center">
+        <div class="container text-center" style="max-width: 800px;">
             <div
                 style="display: inline-flex; align-items: center; justify-content: center; width: 80px; height: 80px; border-radius: 50%; background: var(--success-bg); margin-bottom: 1.5rem; border: var(--border-w) solid var(--success);">
                 <svg style="color: var(--success);" width="40" height="40" viewBox="0 0 24 24" fill="none"
@@ -988,20 +999,29 @@
                 </svg>
             </div>
             <h2>Examination Submitted</h2>
-            <p class="text-muted" style="margin-bottom: 2rem;">Thank you, <span id="res-student-name"
-                    style="color: var(--text-main); font-weight: 500;"></span>. Your exam has been securely submitted.
-            </p>
 
-            <div class="info-panel" style="margin-bottom: 2.5rem;">
+            <h1 id="res-percentage" style="font-size: 3rem; color: var(--primary-light); margin-bottom: 0.25rem;">0%
+            </h1>
+            <p id="res-score-text" class="text-muted" style="font-size: 1.1rem; font-weight: 500; margin-bottom: 2rem;">
+                Score: 0 / 0</p>
+
+            <div class="info-panel" style="margin-bottom: 2.5rem; text-align: left;">
+                <p><strong>Student:</strong> <span id="res-student-name" style="color: var(--text-main);"></span></p>
                 <p><strong>Test Name:</strong> <span id="res-test-name" style="color: var(--text-main);"></span></p>
                 <p><strong>Time Taken:</strong> <span id="res-time-taken" style="color: var(--text-main);"></span></p>
-                <p
-                    style="margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted); border-top: var(--border-w) solid var(--border-subtle); padding-top: 1rem;">
-                    Note: Your final score will be evaluated by the backend system and communicated separately.
-                </p>
             </div>
 
-            <button class="btn" onclick="location.reload()">Return to Home</button>
+            <!-- Dynamic Review Section -->
+            <div id="detailed-review-container" style="text-align: left; margin-bottom: 2.5rem;">
+                <h3
+                    style="margin-bottom: 1.5rem; border-bottom: var(--border-w) solid var(--border-subtle); padding-bottom: 0.75rem;">
+                    Detailed Review</h3>
+                <div id="review-list">
+                    <!-- Cards injected here via JS -->
+                </div>
+            </div>
+
+            <button class="btn" onclick="location.reload()">Return to Dashboard</button>
         </div>
     </div>
 
@@ -1042,18 +1062,9 @@
             localStorage.setItem('gcc-theme', isLight ? 'light' : 'dark');
         }
 
-        // Initialize Theme (Default to dark if not set)
         const savedTheme = localStorage.getItem('gcc-theme');
-        if (savedTheme === 'light') {
-            setTheme(true);
-        } else {
-            setTheme(false);
-        }
-
-        themeToggleBtn.addEventListener('click', () => {
-            const isLight = !document.body.classList.contains('light-theme');
-            setTheme(isLight);
-        });
+        if (savedTheme === 'light') { setTheme(true); } else { setTheme(false); }
+        themeToggleBtn.addEventListener('click', () => { setTheme(!document.body.classList.contains('light-theme')); });
 
         // --- Configuration ---
         const API_URL = 'https://script.google.com/macros/s/AKfycbyu6I2NW_XjxqwUXSRJ2MXYvoyDcFa6soMNy1pCzMdgC1k6Rxt92WkB5Xz4M7oeL3cM/exec';
@@ -1066,36 +1077,27 @@
             selectedTest: null,
             questions: [],
             currentQIndex: 0,
-            answers: {}, // Format: { questionId: 'optionA' }
+            answers: {},
             timeLeft: 0,
             timerInterval: null
         };
 
-        // --- Utility Functions ---
         const $ = id => document.getElementById(id);
 
         function showView(viewId) {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
             $(viewId).classList.add('active');
         }
-
-        function toggleLoading(show) {
-            $('overlay-loading').classList.toggle('active', show);
-        }
-
+        function toggleLoading(show) { $('overlay-loading').classList.toggle('active', show); }
         function formatTime(seconds) {
             const m = Math.floor(seconds / 60).toString().padStart(2, '0');
             const s = (seconds % 60).toString().padStart(2, '0');
             return `${m}:${s}`;
         }
 
-        // --- Event Listeners & Core Logic ---
         document.addEventListener('DOMContentLoaded', () => {
-
-            // 1. Handle Login
             $('login-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
-
                 const loginError = $('login-error');
                 loginError.style.display = 'none';
                 loginError.textContent = '';
@@ -1104,17 +1106,13 @@
                 const enteredName = $('student-name').value.trim();
 
                 toggleLoading(true);
-
                 try {
-                    // Validate student via API before proceeding
                     const response = await fetch(`${API_URL}?action=validateStudent&studentId=${encodeURIComponent(enteredId)}`);
                     const result = await response.json();
 
                     if (result.status === 'success') {
                         state.studentId = result.data.studentId;
-                        // Use the name from the database if available, otherwise fallback to entered name
                         state.studentName = result.data.name || enteredName;
-
                         $('display-student-name').textContent = state.studentName;
                         await fetchTests();
                     } else {
@@ -1128,11 +1126,12 @@
             });
         });
 
-        // 2. Fetch published tests
+        // 2. Fetch tests including attempted blocks
         async function fetchTests() {
             toggleLoading(true);
             try {
-                const response = await fetch(`${API_URL}?action=getTests`);
+                // Ensure studentId is passed so API knows what was attempted
+                const response = await fetch(`${API_URL}?action=getTests&studentId=${encodeURIComponent(state.studentId)}`);
                 const result = await response.json();
 
                 if (result.status === 'success') {
@@ -1143,7 +1142,7 @@
                     throw new Error(result.message);
                 }
             } catch (error) {
-                alert("Failed to load tests. Ensure Apps Script Web App is deployed and accessible.");
+                alert("Failed to load tests.");
                 console.error(error);
             }
             toggleLoading(false);
@@ -1160,8 +1159,18 @@
 
             state.tests.forEach(test => {
                 const card = document.createElement('div');
-                card.className = 'test-card';
-                // Emojis replaced with clean textual presentation as per UI requirements
+                card.className = 'test-card' + (test.attempted ? ' locked-test' : ' active-test');
+
+                let actionHtml = '';
+                if (test.attempted) {
+                    actionHtml = `<div class="meta-badge" style="background: var(--success-bg); border-color: var(--success); color: var(--success); margin-top: 1.5rem; font-weight: 600;">
+                        Completed - Score: ${test.score}/${test.totalQuestions} (${test.percentage})
+                    </div>`;
+                } else {
+                    actionHtml = `<button class="btn btn-outline" style="margin-top: 1.5rem; width: auto; padding: 0.5rem 1.5rem;" onclick="event.stopPropagation(); showInstructions('${test.testId}')">View Details</button>`;
+                    card.onclick = () => showInstructions(test.testId);
+                }
+
                 card.innerHTML = `
                     <h3>${test.testName}</h3>
                     <div class="test-meta">
@@ -1169,14 +1178,15 @@
                         <span class="meta-badge">Duration: ${test.duration} mins</span>
                         <span class="meta-badge">Questions: ${test.totalQuestions}</span>
                     </div>
+                    ${actionHtml}
                 `;
-                card.onclick = () => showInstructions(test);
                 container.appendChild(card);
             });
         }
 
-        // 3. Show Instructions
-        function showInstructions(test) {
+        function showInstructions(testId) {
+            const test = state.tests.find(t => t.testId === testId);
+            if (!test) return;
             state.selectedTest = test;
 
             $('inst-test-name').textContent = test.testName;
@@ -1188,7 +1198,6 @@
             showView('view-instructions');
         }
 
-        // 4. Start Exam
         async function startExam() {
             toggleLoading(true);
             try {
@@ -1222,20 +1231,13 @@
             renderQuestion();
         }
 
-        // 5. Timer Logic
         function startTimer() {
             if (state.timerInterval) clearInterval(state.timerInterval);
-
             updateTimerDisplay();
-
             state.timerInterval = setInterval(() => {
                 state.timeLeft--;
                 updateTimerDisplay();
-
-                if (state.timeLeft <= 300) { // 5 minutes warning
-                    $('exam-timer').classList.add('warning');
-                }
-
+                if (state.timeLeft <= 300) { $('exam-timer').classList.add('warning'); }
                 if (state.timeLeft <= 0) {
                     clearInterval(state.timerInterval);
                     autoSubmit();
@@ -1243,16 +1245,11 @@
             }, 1000);
         }
 
-        function updateTimerDisplay() {
-            $('time-display').textContent = formatTime(state.timeLeft);
-        }
+        function updateTimerDisplay() { $('time-display').textContent = formatTime(state.timeLeft); }
 
-        // 6. Question Rendering & Navigation
         function renderQuestion() {
             const q = state.questions[state.currentQIndex];
             $('current-q-num').textContent = state.currentQIndex + 1;
-
-            // Render Text & Code
             $('q-text').textContent = q.question;
 
             const codeContainer = $('q-code-container');
@@ -1263,39 +1260,31 @@
                 codeContainer.style.display = 'none';
             }
 
-            // Render Options
             const optsContainer = $('options-container');
             optsContainer.innerHTML = '';
 
             const options = [
-                { id: 'optionA', text: q.optionA },
-                { id: 'optionB', text: q.optionB },
-                { id: 'optionC', text: q.optionC },
-                { id: 'optionD', text: q.optionD }
+                { id: 'optionA', text: q.optionA }, { id: 'optionB', text: q.optionB },
+                { id: 'optionC', text: q.optionC }, { id: 'optionD', text: q.optionD }
             ];
 
             const savedAnswer = state.answers[q.questionId];
 
             options.forEach(opt => {
-                if (!opt.text) return; // Skip empty options
+                if (!opt.text) return;
 
                 const isSelected = savedAnswer === opt.id;
-
                 const label = document.createElement('label');
                 label.className = `option-label ${isSelected ? 'selected' : ''}`;
-
-                // Modified to use clean custom radio borders instead of default styling
                 label.innerHTML = `
                     <input type="radio" class="hidden-radio" name="q-option" value="${opt.id}" ${isSelected ? 'checked' : ''}>
                     <div class="custom-radio"></div>
                     <span class="option-text">${opt.text}</span>
                 `;
-
                 label.onclick = () => selectOption(q.questionId, opt.id);
                 optsContainer.appendChild(label);
             });
 
-            // Update Navigation Buttons
             $('btn-prev').disabled = state.currentQIndex === 0;
             $('btn-next').disabled = state.currentQIndex === state.questions.length - 1;
 
@@ -1304,37 +1293,26 @@
 
         function selectOption(questionId, optionId) {
             state.answers[questionId] = optionId;
-            renderQuestion(); // Re-render to show selection
-            renderPalette();  // Update palette colors
+            renderQuestion(); renderPalette();
         }
 
         function navigate(direction) {
             const newIndex = state.currentQIndex + direction;
             if (newIndex >= 0 && newIndex < state.questions.length) {
-                state.currentQIndex = newIndex;
-                renderQuestion();
+                state.currentQIndex = newIndex; renderQuestion();
             }
         }
+        function jumpToQuestion(index) { state.currentQIndex = index; renderQuestion(); }
 
-        function jumpToQuestion(index) {
-            state.currentQIndex = index;
-            renderQuestion();
-        }
-
-        // 7. Palette Logic
         function renderPalette() {
             const grid = $('palette-grid');
             grid.innerHTML = '';
-
             state.questions.forEach((q, index) => {
                 const btn = document.createElement('div');
                 const isAnswered = !!state.answers[q.questionId];
-
                 btn.className = `palette-btn ${isAnswered ? 'answered' : ''}`;
                 btn.textContent = index + 1;
                 btn.onclick = () => jumpToQuestion(index);
-
-                // Keep track of DOM element for highlighting
                 btn.id = `pal-btn-${index}`;
                 grid.appendChild(btn);
             });
@@ -1347,11 +1325,9 @@
             if (activeBtn) activeBtn.classList.add('active');
         }
 
-        // 8. Submission Logic
         function confirmSubmit() {
             const answeredCount = Object.keys(state.answers).length;
             const total = state.questions.length;
-
             if (answeredCount < total) {
                 $('confirm-msg').textContent = `You have answered ${answeredCount} out of ${total} questions. Are you sure you want to submit?`;
             } else {
@@ -1360,20 +1336,13 @@
             $('overlay-confirm').classList.add('active');
         }
 
-        function closeModal() {
-            $('overlay-confirm').classList.remove('active');
-        }
+        function closeModal() { $('overlay-confirm').classList.remove('active'); }
 
         function autoSubmit() {
             $('confirm-msg').textContent = "Time is up! Submitting your exam automatically...";
             $('overlay-confirm').classList.add('active');
-
-            // Remove buttons so user can't cancel auto-submit
             document.querySelector('.modal-btns').style.display = 'none';
-
-            setTimeout(() => {
-                executeSubmit();
-            }, 2000);
+            setTimeout(() => { executeSubmit(); }, 2000);
         }
 
         async function executeSubmit() {
@@ -1395,7 +1364,7 @@
                     score: "Evaluated Server-Side",
                     total: state.questions.length,
                     percentage: "Pending",
-                    studentAnswers: state.answers // Backend evaluates this
+                    studentAnswers: state.answers
                 }
             };
 
@@ -1409,7 +1378,14 @@
                 const result = await response.json();
 
                 if (result.status === 'success') {
-                    showResultScreen(payload.data.timeTaken);
+                    // Result data holds detailed answers, pass it to the UI
+                    showResultScreen(result.data, payload.data.timeTaken);
+
+                    // --- NEW: Trigger Email Notification ---
+                    if (typeof window.sendAdminNotification === 'function') {
+                        window.sendAdminNotification(result.data, payload.data, state.selectedTest);
+                    }
+
                 } else {
                     throw new Error(result.message);
                 }
@@ -1419,10 +1395,69 @@
             toggleLoading(false);
         }
 
-        function showResultScreen(timeTaken) {
+        function showResultScreen(resultData, timeTaken) {
             $('res-student-name').textContent = state.studentName;
             $('res-test-name').textContent = state.selectedTest.testName;
             $('res-time-taken').textContent = timeTaken;
+
+            $('res-percentage').textContent = resultData.percentage;
+            $('res-score-text').textContent = `Score: ${resultData.finalScore} / ${resultData.total}`;
+
+            // Build detailed review
+            const reviewList = $('review-list');
+            reviewList.innerHTML = '';
+
+            if (resultData.detailedReview && resultData.detailedReview.length > 0) {
+                resultData.detailedReview.forEach((item, index) => {
+                    const getOptText = (key) => {
+                        if (!key || key === 'Not Answered') return 'Not Answered';
+                        let k = key.toString().trim().toLowerCase();
+                        if (k === 'a' || k === 'optiona') return item.optionA;
+                        if (k === 'b' || k === 'optionb') return item.optionB;
+                        if (k === 'c' || k === 'optionc') return item.optionC;
+                        if (k === 'd' || k === 'optiond') return item.optionD;
+                        return key;
+                    };
+
+                    const selectedText = getOptText(item.selectedOption);
+                    const correctText = getOptText(item.correctOption);
+
+                    const card = document.createElement('div');
+                    card.className = 'info-panel';
+                    card.style.marginBottom = '1.5rem';
+
+                    let html = `<p style="font-weight: 600; margin-bottom: 1rem; color: var(--text-main);">Q${index + 1}: ${item.question}</p>`;
+
+                    if (item.code && item.code.trim() !== '') {
+                        html += `<pre class="code-block" style="margin-bottom: 1rem;"><code>${item.code}</code></pre>`;
+                    }
+
+                    html += `<div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;">
+                                <div style="color: ${item.isCorrect ? 'var(--success)' : 'var(--danger)'};">
+                                    <strong>Your Answer:</strong> ${selectedText}
+                                </div>`;
+
+                    if (!item.isCorrect) {
+                        html += `<div style="color: var(--success);">
+                                    <strong>Correct Answer:</strong> ${correctText}
+                                 </div>`;
+                    }
+                    html += `</div>`;
+
+                    if (item.explanation && item.explanation.trim() !== '') {
+                        html += `<div style="background: var(--bg-surface-hover); padding: 1rem; border-radius: var(--radius-sm); border: var(--border-w) solid var(--border-subtle); font-size: 0.9rem;">
+                                    <strong style="color: var(--primary-light);">Explanation:</strong><br/>
+                                    ${item.explanation}
+                                 </div>`;
+                    }
+
+                    card.innerHTML = html;
+                    reviewList.appendChild(card);
+                });
+            } else {
+                $('detailed-review-container').style.display = 'none';
+            }
+
             showView('view-result');
         }
 
