@@ -935,8 +935,7 @@
                 <div>
                     <h3 id="exam-test-title" style="margin: 0; font-size: 1.15rem;">Test Title</h3>
                     <div class="text-muted" style="margin-top: 0.25rem;">Question <span id="current-q-num">1</span> of
-                        <span id="total-q-num">10</span>
-                    </div>
+                        <span id="total-q-num">10</span></div>
                 </div>
                 <div class="timer-badge" id="exam-timer">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -1276,11 +1275,26 @@
                 const isSelected = savedAnswer === opt.id;
                 const label = document.createElement('label');
                 label.className = `option-label ${isSelected ? 'selected' : ''}`;
-                label.innerHTML = `
-                    <input type="radio" class="hidden-radio" name="q-option" value="${opt.id}" ${isSelected ? 'checked' : ''}>
-                    <div class="custom-radio"></div>
-                    <span class="option-text">${opt.text}</span>
-                `;
+
+                // Safe Rendering Logic: Avoid innerHTML to prevent <class 'int'> from being parsed as an HTML tag
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.className = 'hidden-radio';
+                radio.name = 'q-option';
+                radio.value = opt.id;
+                if (isSelected) radio.checked = true;
+
+                const customRadio = document.createElement('div');
+                customRadio.className = 'custom-radio';
+
+                const span = document.createElement('span');
+                span.className = 'option-text';
+                span.textContent = String(opt.text); // Safely sets text without parsing HTML
+
+                label.appendChild(radio);
+                label.appendChild(customRadio);
+                label.appendChild(span);
+
                 label.onclick = () => selectOption(q.questionId, opt.id);
                 optsContainer.appendChild(label);
             });
@@ -1408,10 +1422,17 @@
             reviewList.innerHTML = '';
 
             if (resultData.detailedReview && resultData.detailedReview.length > 0) {
+
+                // Helper to escape HTML tags in strings like <class 'int'>
+                const escapeHTML = (str) => {
+                    if (str === null || str === undefined) return '';
+                    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+                };
+
                 resultData.detailedReview.forEach((item, index) => {
                     const getOptText = (key) => {
                         if (!key || key === 'Not Answered') return 'Not Answered';
-                        let k = key.toString().trim().toLowerCase();
+                        let k = String(key).trim().toLowerCase();
                         if (k === 'a' || k === 'optiona') return item.optionA;
                         if (k === 'b' || k === 'optionb') return item.optionB;
                         if (k === 'c' || k === 'optionc') return item.optionC;
@@ -1426,28 +1447,28 @@
                     card.className = 'info-panel';
                     card.style.marginBottom = '1.5rem';
 
-                    let html = `<p style="font-weight: 600; margin-bottom: 1rem; color: var(--text-main);">Q${index + 1}: ${item.question}</p>`;
+                    let html = `<p style="font-weight: 600; margin-bottom: 1rem; color: var(--text-main);">Q${index + 1}: ${escapeHTML(item.question)}</p>`;
 
-                    if (item.code && item.code.trim() !== '') {
-                        html += `<pre class="code-block" style="margin-bottom: 1rem;"><code>${item.code}</code></pre>`;
+                    if (item.code && String(item.code).trim() !== '') {
+                        html += `<pre class="code-block" style="margin-bottom: 1rem;"><code>${escapeHTML(item.code)}</code></pre>`;
                     }
 
                     html += `<div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;">
                                 <div style="color: ${item.isCorrect ? 'var(--success)' : 'var(--danger)'};">
-                                    <strong>Your Answer:</strong> ${selectedText}
+                                    <strong>Your Answer:</strong> ${escapeHTML(selectedText)}
                                 </div>`;
 
                     if (!item.isCorrect) {
                         html += `<div style="color: var(--success);">
-                                    <strong>Correct Answer:</strong> ${correctText}
+                                    <strong>Correct Answer:</strong> ${escapeHTML(correctText)}
                                  </div>`;
                     }
                     html += `</div>`;
 
-                    if (item.explanation && item.explanation.trim() !== '') {
+                    if (item.explanation && String(item.explanation).trim() !== '') {
                         html += `<div style="background: var(--bg-surface-hover); padding: 1rem; border-radius: var(--radius-sm); border: var(--border-w) solid var(--border-subtle); font-size: 0.9rem;">
                                     <strong style="color: var(--primary-light);">Explanation:</strong><br/>
-                                    ${item.explanation}
+                                    ${escapeHTML(item.explanation)}
                                  </div>`;
                     }
 

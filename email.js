@@ -8,7 +8,6 @@ const EMAIL_CONFIG = {
         "https://script.google.com/macros/s/AKfycbyu6I2NW_XjxqwUXSRJ2MXYvoyDcFa6soMNy1pCzMdgC1k6Rxt92WkB5Xz4M7oeL3cM/exec",
 
     // Admin email address to receive notifications. UPDATE THIS!
-    ADMIN_EMAIL: "admin_email_here@example.com",
 };
 
 /**
@@ -189,7 +188,6 @@ Please find the detailed result attached as a PDF.
         const emailPayload = {
             action: "sendAdminEmail",
             data: {
-                adminEmail: EMAIL_CONFIG.ADMIN_EMAIL,
                 studentId: payloadData.studentId, // <-- ADDED: Pass student ID to backend
                 subject: `Test Result: ${payloadData.studentName} - ${payloadData.testName}`,
                 body: emailSummary,

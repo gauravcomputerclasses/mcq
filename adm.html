@@ -782,12 +782,18 @@
             if (testQuestions.length === 0) {
                 list.innerHTML = '<p class="text-muted">No question data found for this test.</p>';
             } else {
+                // Helper to safely escape HTML tags
+                const escapeHTML = (str) => {
+                    if (str === null || str === undefined) return '';
+                    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+                };
+
                 testQuestions.forEach((q, index) => {
                     const studentAnsKey = answersObj[q.questionId];
 
                     const getOptText = (key) => {
                         if (!key) return 'Not Answered';
-                        let k = key.toString().trim().toLowerCase();
+                        let k = String(key).trim().toLowerCase();
                         if (k === 'a' || k === 'optiona') return q.optionA;
                         if (k === 'b' || k === 'optionb') return q.optionB;
                         if (k === 'c' || k === 'optionc') return q.optionC;
@@ -800,12 +806,24 @@
 
                     let isCorrect = false;
                     if (studentAnsKey && q.answer) {
-                        let sAns = studentAnsKey.toString().trim().toLowerCase();
-                        let cAns = q.answer.toString().trim().toLowerCase();
+                        let sAns = String(studentAnsKey).trim().toLowerCase();
+                        let cAns = String(q.answer).trim().toLowerCase();
+
+                        // Check exact option match
                         if (sAns === 'a') sAns = 'optiona'; else if (sAns === 'b') sAns = 'optionb';
                         else if (sAns === 'c') sAns = 'optionc'; else if (sAns === 'd') sAns = 'optiond';
-                        if (cAns === 'a') cAns = 'optiona'; else if (cAns === 'b') cAns = 'optionb';
-                        else if (cAns === 'c') cAns = 'optionc'; else if (cAns === 'd') cAns = 'optiond';
+
+                        if (cAns === 'a' || cAns === 'optiona') cAns = 'optiona';
+                        else if (cAns === 'b' || cAns === 'optionb') cAns = 'optionb';
+                        else if (cAns === 'c' || cAns === 'optionc') cAns = 'optionc';
+                        else if (cAns === 'd' || cAns === 'optiond') cAns = 'optiond';
+                        else {
+                            // Check value match for TRUE/FALSE case insensitivity
+                            if (q.optionA !== undefined && q.optionA !== null && String(q.optionA).trim().toLowerCase() === cAns) cAns = 'optiona';
+                            else if (q.optionB !== undefined && q.optionB !== null && String(q.optionB).trim().toLowerCase() === cAns) cAns = 'optionb';
+                            else if (q.optionC !== undefined && q.optionC !== null && String(q.optionC).trim().toLowerCase() === cAns) cAns = 'optionc';
+                            else if (q.optionD !== undefined && q.optionD !== null && String(q.optionD).trim().toLowerCase() === cAns) cAns = 'optiond';
+                        }
 
                         if (sAns === cAns) isCorrect = true;
                     }
@@ -814,14 +832,14 @@
                     card.style.cssText = 'background: var(--surface); padding: 1.25rem; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 1rem;';
 
                     card.innerHTML = `
-                        <p style="font-weight: 600; margin-bottom: 0.75rem;">Q${index + 1}: ${q.question}</p>
-                        ${q.code ? `<pre style="background: #0f172a; color: #e2e8f0; padding: 1rem; border-radius: var(--radius); font-family: monospace; font-size: 0.85rem; margin-bottom: 1rem; overflow-x: auto; white-space: pre-wrap;"><code>${q.code}</code></pre>` : ''}
+                        <p style="font-weight: 600; margin-bottom: 0.75rem;">Q${index + 1}: ${escapeHTML(q.question)}</p>
+                        ${q.code ? `<pre style="background: #0f172a; color: #e2e8f0; padding: 1rem; border-radius: var(--radius); font-family: monospace; font-size: 0.85rem; margin-bottom: 1rem; overflow-x: auto; white-space: pre-wrap;"><code>${escapeHTML(q.code)}</code></pre>` : ''}
                         <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.95rem;">
                             <div style="color: ${isCorrect ? 'var(--success)' : 'var(--danger)'};">
-                                <strong>Student Answer:</strong> ${selectedText}
+                                <strong>Student Answer:</strong> ${escapeHTML(selectedText)}
                             </div>
                             <div style="color: var(--success);">
-                                <strong>Correct Answer:</strong> ${correctText}
+                                <strong>Correct Answer:</strong> ${escapeHTML(correctText)}
                             </div>
                             <div>
                                 <strong>Marks:</strong> ${isCorrect ? '1 / 1' : '0 / 1'}
