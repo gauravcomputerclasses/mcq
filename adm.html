@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Exam Portal - Admin Dashboard</title>
     <style>
-        /* CSS Variables */
         :root {
             --primary: #0f172a;
             --primary-hover: #334155;
@@ -370,7 +369,6 @@
     </aside>
 
     <main class="main-content">
-        <!-- Dashboard View -->
         <div id="view-dashboard" class="view active">
             <h2>Dashboard Overview</h2>
             <div class="stats-grid">
@@ -409,11 +407,13 @@
             </div>
         </div>
 
-        <!-- Manage Tests View -->
         <div id="view-tests" class="view">
             <div class="header-actions">
                 <h2>Manage Tests</h2>
-                <button class="btn" onclick="openTestModal()">+ Create New Test</button>
+                <div style="display: flex; gap: 1rem;">
+                    <button class="btn btn-outline" onclick="openBulkUploadModal()">📄 Bulk Import Questions</button>
+                    <button class="btn" onclick="openTestModal()">+ Create New Test</button>
+                </div>
             </div>
             <div class="table-container">
                 <table>
@@ -433,7 +433,6 @@
             </div>
         </div>
 
-        <!-- Student Results View -->
         <div id="view-results" class="view">
             <div class="header-actions">
                 <h2>Student Results</h2>
@@ -454,7 +453,7 @@
                             <th>Score</th>
                             <th>Percentage</th>
                             <th>Time Taken</th>
-                            <th>Actions</th> <!-- NEW ACTIONS COLUMN -->
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="results-table-body"></tbody>
@@ -462,7 +461,6 @@
             </div>
         </div>
 
-        <!-- NEW: Manage Students View -->
         <div id="view-students" class="view">
             <div class="header-actions">
                 <h2>Manage Students</h2>
@@ -486,7 +484,6 @@
         </div>
     </main>
 
-    <!-- Modal: Create / Edit Test -->
     <div id="test-modal" class="overlay">
         <div class="modal">
             <div class="modal-header">
@@ -523,7 +520,6 @@
         </div>
     </div>
 
-    <!-- NEW MODAL: Detailed Result View -->
     <div id="result-detail-modal" class="overlay">
         <div class="modal" style="max-width: 800px; display: flex; flex-direction: column; max-height: 90vh;">
             <div class="modal-header" style="flex-shrink: 0;">
@@ -540,7 +536,6 @@
                         style="font-weight: bold; color: var(--success);"></span></p>
             </div>
 
-            <!-- Scrollable review container -->
             <div id="det-review-list" style="overflow-y: auto; text-align: left; padding-right: 0.5rem; flex-grow: 1;">
             </div>
 
@@ -550,7 +545,6 @@
         </div>
     </div>
 
-    <!-- NEW MODAL: Manage Student -->
     <div id="student-modal" class="overlay">
         <div class="modal">
             <div class="modal-header">
@@ -582,6 +576,36 @@
         </div>
     </div>
 
+    <!-- NEW MODAL: Bulk Import CSV Modal -->
+    <div id="bulk-upload-modal" class="overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="bulk-modal-title">Bulk Import CSV</h3>
+                <button class="btn btn-outline btn-sm" onclick="closeBulkUploadModal()"
+                    style="border:none; font-size: 1.2rem;">&times;</button>
+            </div>
+            <form id="bulk-upload-form">
+                <div class="form-group" style="text-align: left;">
+                    <label>Select Target Test</label>
+                    <select id="bulk-test-select" required>
+                        <!-- Injected via JS -->
+                    </select>
+                </div>
+                <div class="form-group" style="text-align: left;">
+                    <label>CSV File</label>
+                    <input type="file" id="bulk-csv-file" accept=".csv" required
+                        style="padding: 0.4rem; background: var(--bg-base); width: 100%; border: 1px solid var(--border); border-radius: 4px;">
+                    <p class="text-muted" style="font-size: 0.8rem; margin-top: 0.5rem;">Expected Headers: id, type,
+                        question, codeLanguage, code, option_A, option_B, option_C, option_D, answer, explanation</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeBulkUploadModal()">Cancel</button>
+                    <button type="submit" class="btn">Upload Questions</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div id="global-loader" class="loading-screen">
         <div class="spinner"></div>
         <p style="margin-top: 1rem; color: var(--primary); font-weight: 500;">Syncing with Database...</p>
@@ -596,7 +620,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             fetchAdminData();
             document.getElementById('test-form').addEventListener('submit', handleTestSubmit);
-            document.getElementById('student-form').addEventListener('submit', handleStudentSubmit); // NEW listener
+            document.getElementById('student-form').addEventListener('submit', handleStudentSubmit);
         });
 
         function switchTab(viewId, element) {
@@ -643,6 +667,65 @@
             } catch (error) { alert("Failed to save test. " + error.message); }
             showLoader(false);
         }
+
+        // --- NEW: Handle CSV Bulk Upload via Modal ---
+        function openBulkUploadModal() {
+            const select = document.getElementById('bulk-test-select');
+            select.innerHTML = '<option value="">-- Select a Test --</option>' +
+                adminState.tests.map(t => `<option value="${t.testId}">${t.testName} (${t.testId})</option>`).join('');
+            document.getElementById('bulk-upload-form').reset();
+            document.getElementById('bulk-upload-modal').classList.add('active');
+        }
+
+        function closeBulkUploadModal() {
+            document.getElementById('bulk-upload-modal').classList.remove('active');
+        }
+
+        document.getElementById('bulk-upload-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const testId = document.getElementById('bulk-test-select').value;
+            const fileInput = document.getElementById('bulk-csv-file');
+            const file = fileInput.files[0];
+
+            if (!file || !testId) return;
+
+            const reader = new FileReader();
+            reader.onload = async function (eEvent) {
+                const csvContent = eEvent.target.result;
+                showLoader(true);
+
+                try {
+                    const payload = {
+                        action: 'bulkUploadQuestions',
+                        data: {
+                            testId: testId,
+                            csvContent: csvContent
+                        }
+                    };
+
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        body: JSON.stringify(payload),
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                    });
+
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        alert(result.message);
+                        closeBulkUploadModal();
+                        await fetchAdminData(); // Refresh data to fetch updated counts
+                    } else {
+                        throw new Error(result.message);
+                    }
+                } catch (error) {
+                    alert("Upload failed: " + error.message);
+                } finally {
+                    showLoader(false);
+                }
+            };
+
+            reader.readAsText(file);
+        });
 
         function refreshUI() {
             renderDashboard(); renderTests(); populateTestFilter(); renderResults(); renderStudents();
@@ -701,7 +784,6 @@
             `).join('') || '<tr><td colspan="8" class="text-center text-muted">No results found for this selection.</td></tr>';
         }
 
-        // NEW: Render Students
         function renderStudents() {
             document.getElementById('students-table-body').innerHTML = adminState.students.map(s => {
                 const isActive = String(s.active).toLowerCase() !== 'false' && String(s.active) !== '0' && s.active !== '';
@@ -717,7 +799,6 @@
             `}).join('') || '<tr><td colspan="6" class="text-center text-muted">No students found.</td></tr>';
         }
 
-        // NEW: Submit Student to Backend
         async function handleStudentSubmit(e) {
             e.preventDefault();
             showLoader(true);
@@ -736,31 +817,6 @@
             showLoader(false);
         }
 
-        // NEW: Student Modal Controls
-        function openStudentModal() {
-            document.getElementById('student-form').reset();
-            document.getElementById('form-student-id').readOnly = false; // Allow editing ID for new
-            document.getElementById('student-modal-title').textContent = 'Add New Student';
-            document.getElementById('student-modal').classList.add('active');
-        }
-
-        function editStudent(studentData) {
-            document.getElementById('student-modal-title').textContent = 'Edit Student';
-            document.getElementById('form-student-id').value = studentData.studentId;
-            document.getElementById('form-student-id').readOnly = true; // Prevent changing ID
-            document.getElementById('form-student-name').value = studentData.name;
-            document.getElementById('form-student-email').value = studentData.email;
-            document.getElementById('form-student-mobile').value = studentData.mobile;
-
-            const isActive = String(studentData.active).toLowerCase() !== 'false' && String(studentData.active) !== '0' && studentData.active !== '';
-            document.getElementById('form-student-status').value = isActive ? 'true' : 'false';
-
-            document.getElementById('student-modal').classList.add('active');
-        }
-
-        function closeStudentModal() { document.getElementById('student-modal').classList.remove('active'); }
-
-        // Detailed Result Viewer Logic
         function viewDetailedResult(resultId) {
             const result = adminState.results.find(r => r.resultId === resultId);
             if (!result) return;
@@ -773,79 +829,67 @@
             list.innerHTML = '';
 
             let answersObj = {};
-            try {
-                if (result.studentAnswers) { answersObj = JSON.parse(result.studentAnswers); }
-            } catch (e) { console.error("Could not parse student answers", e); }
+            try { if (result.studentAnswers) answersObj = JSON.parse(result.studentAnswers); } catch (e) { }
 
             const testQuestions = adminState.questions.filter(q => q.testId == result.testId);
 
             if (testQuestions.length === 0) {
                 list.innerHTML = '<p class="text-muted">No question data found for this test.</p>';
             } else {
-                // Helper to safely escape HTML tags
                 const escapeHTML = (str) => {
                     if (str === null || str === undefined) return '';
                     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
                 };
 
-                testQuestions.forEach((q, index) => {
-                    const studentAnsKey = answersObj[q.questionId];
+                testQuestions.forEach((qObj, index) => {
+                    let qData = {};
+                    try { qData = JSON.parse(qObj.question); } catch (e) { qData = {}; }
 
-                    const getOptText = (key) => {
-                        if (!key) return 'Not Answered';
-                        let k = String(key).trim().toLowerCase();
-                        if (k === 'a' || k === 'optiona') return q.optionA;
-                        if (k === 'b' || k === 'optionb') return q.optionB;
-                        if (k === 'c' || k === 'optionc') return q.optionC;
-                        if (k === 'd' || k === 'optiond') return q.optionD;
-                        return key;
+                    const type = qData.type || 'mcq';
+                    const studentAnsKey = answersObj[qObj.questionId] || '';
+
+                    const getOptText = (val) => {
+                        if (!val || val === 'Not Answered') return 'Not Answered';
+                        if (type === 'mcq' || type === 'code_output') {
+                            const k = String(val).trim().toUpperCase();
+                            return (qData.options && qData.options[k]) ? `${k}: ${qData.options[k]}` : val;
+                        } else if (type === 'true_false') {
+                            return String(val).toLowerCase() === 'true' ? 'True' : 'False';
+                        }
+                        return val;
                     };
 
-                    const selectedText = getOptText(studentAnsKey);
-                    const correctText = getOptText(q.answer);
+                    const selectedText = getOptText(studentAnsKey || 'Not Answered');
+                    const correctText = getOptText(qData.answer);
 
                     let isCorrect = false;
-                    if (studentAnsKey && q.answer) {
-                        let sAns = String(studentAnsKey).trim().toLowerCase();
-                        let cAns = String(q.answer).trim().toLowerCase();
+                    let sAns = studentAnsKey ? String(studentAnsKey).trim() : '';
+                    let cAns = qData.answer ? String(qData.answer).trim() : '';
 
-                        // Check exact option match
-                        if (sAns === 'a') sAns = 'optiona'; else if (sAns === 'b') sAns = 'optionb';
-                        else if (sAns === 'c') sAns = 'optionc'; else if (sAns === 'd') sAns = 'optiond';
-
-                        if (cAns === 'a' || cAns === 'optiona') cAns = 'optiona';
-                        else if (cAns === 'b' || cAns === 'optionb') cAns = 'optionb';
-                        else if (cAns === 'c' || cAns === 'optionc') cAns = 'optionc';
-                        else if (cAns === 'd' || cAns === 'optiond') cAns = 'optiond';
-                        else {
-                            // Check value match for TRUE/FALSE case insensitivity
-                            if (q.optionA !== undefined && q.optionA !== null && String(q.optionA).trim().toLowerCase() === cAns) cAns = 'optiona';
-                            else if (q.optionB !== undefined && q.optionB !== null && String(q.optionB).trim().toLowerCase() === cAns) cAns = 'optionb';
-                            else if (q.optionC !== undefined && q.optionC !== null && String(q.optionC).trim().toLowerCase() === cAns) cAns = 'optionc';
-                            else if (q.optionD !== undefined && q.optionD !== null && String(q.optionD).trim().toLowerCase() === cAns) cAns = 'optiond';
-                        }
-
-                        if (sAns === cAns) isCorrect = true;
+                    if (type === 'fill_blank') {
+                        let normSAns = sAns.replace(/\s+/g, ' ').toLowerCase();
+                        let normCAns = cAns.replace(/\s+/g, ' ').toLowerCase();
+                        isCorrect = (normSAns === normCAns && normSAns !== '');
+                    } else if (type === 'true_false') {
+                        isCorrect = (sAns.toLowerCase() === cAns.toLowerCase() && sAns !== '');
+                    } else {
+                        isCorrect = (sAns.toUpperCase() !== '' && sAns.toUpperCase() === cAns.toUpperCase());
                     }
 
                     const card = document.createElement('div');
                     card.style.cssText = 'background: var(--surface); padding: 1.25rem; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 1rem;';
 
-                    card.innerHTML = `
-                        <p style="font-weight: 600; margin-bottom: 0.75rem;">Q${index + 1}: ${escapeHTML(q.question)}</p>
-                        ${q.code ? `<pre style="background: #0f172a; color: #e2e8f0; padding: 1rem; border-radius: var(--radius); font-family: monospace; font-size: 0.85rem; margin-bottom: 1rem; overflow-x: auto; white-space: pre-wrap;"><code>${escapeHTML(q.code)}</code></pre>` : ''}
-                        <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.95rem;">
-                            <div style="color: ${isCorrect ? 'var(--success)' : 'var(--danger)'};">
-                                <strong>Student Answer:</strong> ${escapeHTML(selectedText)}
-                            </div>
-                            <div style="color: var(--success);">
-                                <strong>Correct Answer:</strong> ${escapeHTML(correctText)}
-                            </div>
-                            <div>
-                                <strong>Marks:</strong> ${isCorrect ? '1 / 1' : '0 / 1'}
-                            </div>
-                        </div>
-                    `;
+                    let html = `<p style="font-weight: 600; margin-bottom: 0.75rem;">Q${index + 1}: ${escapeHTML(qData.question)}</p>`;
+                    if (type === 'code_output' && qData.code) {
+                        html += `<pre style="background: #0f172a; color: #e2e8f0; padding: 1rem; border-radius: var(--radius); font-family: monospace; font-size: 0.85rem; margin-bottom: 1rem; overflow-x: auto; white-space: pre-wrap;"><code>${escapeHTML(qData.code)}</code></pre>`;
+                    }
+                    html += `<div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.95rem;">
+                                <div style="color: ${isCorrect ? 'var(--success)' : 'var(--danger)'};"><strong>Student Answer:</strong> ${escapeHTML(selectedText)}</div>
+                                <div style="color: var(--success);"><strong>Correct Answer:</strong> ${escapeHTML(correctText)}</div>
+                                <div><strong>Marks:</strong> ${isCorrect ? '1 / 1' : '0 / 1'}</div>
+                            </div>`;
+
+                    card.innerHTML = html;
                     list.appendChild(card);
                 });
             }
@@ -866,6 +910,26 @@
             document.getElementById('test-modal').classList.add('active');
         }
         function closeTestModal() { document.getElementById('test-modal').classList.remove('active'); }
+
+        function openStudentModal() {
+            document.getElementById('student-form').reset();
+            document.getElementById('form-student-id').readOnly = false;
+            document.getElementById('student-modal-title').textContent = 'Add New Student';
+            document.getElementById('student-modal').classList.add('active');
+        }
+        function editStudent(studentData) {
+            document.getElementById('student-modal-title').textContent = 'Edit Student';
+            document.getElementById('form-student-id').value = studentData.studentId;
+            document.getElementById('form-student-id').readOnly = true;
+            document.getElementById('form-student-name').value = studentData.name;
+            document.getElementById('form-student-email').value = studentData.email;
+            document.getElementById('form-student-mobile').value = studentData.mobile;
+            const isActive = String(studentData.active).toLowerCase() !== 'false' && String(studentData.active) !== '0' && studentData.active !== '';
+            document.getElementById('form-student-status').value = isActive ? 'true' : 'false';
+            document.getElementById('student-modal').classList.add('active');
+        }
+        function closeStudentModal() { document.getElementById('student-modal').classList.remove('active'); }
+
         function showLoader(show) { document.getElementById('global-loader').style.display = show ? 'flex' : 'none'; }
         function formatDate(dateString) {
             if (!dateString) return '-'; const d = new Date(dateString);
