@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - MCQ Portal</title>
+    <link rel="icon" href="data:,">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Tailwind CSS for utility layout -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PapaParse for CSV importing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        :root {
+            --bg-base: #091013;
+            --bg-surface: #101c21;
+            --bg-surface-hover: #15252b;
+            --primary-dark: #16363E;
+            --primary: #21515d;
+            --primary-light: #2c6e7e;
+            --primary-active: #388a9e;
+            --primary-transparent: rgba(44, 110, 126, 0.15);
+            --border-w: 1px;
+            --border-subtle: #1e333a;
+            --border-strong: #2c4953;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --text-placeholder: #475569;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+        }
+
+        body.light-mode {
+            --bg-base: #f8fafc;
+            --bg-surface: #ffffff;
+            --bg-surface-hover: #f1f5f9;
+            --border-w: 2px;
+            --border-subtle: #cbd5e1;
+            --border-strong: #94a3b8;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --primary: #1e293b;
+            --primary-light: #2c6e7e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background: var(--bg-base);
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            background: var(--bg-surface);
+            border-right: var(--border-w) solid var(--border-subtle);
+        }
+
+        .nav-item {
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            color: var(--text-muted);
+            margin-bottom: 0.35rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-surface-hover);
+            color: var(--text-main);
+        }
+
+        .nav-item.active {
+            background: var(--bg-base);
+            color: var(--primary-light);
+            font-weight: 700;
+            border-left: 3px solid var(--primary-light);
+        }
+
+        .card {
+            background: var(--bg-surface);
+            border: var(--border-w) solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+        }
+
+        .stat-card {
+            background: var(--bg-surface);
+            border: var(--border-w) solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border-bottom: var(--border-w) solid var(--border-subtle);
+            padding: 0.85rem 1rem;
+            text-align: left;
+            font-size: 0.875rem;
+        }
+
+        th {
+            background: var(--bg-base);
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+
+        tr:hover td {
+            background: var(--bg-surface-hover);
+        }
+
+        .btn {
+            background: var(--primary);
+            color: #ffffff;
+            padding: 0.55rem 1.1rem;
+            border: var(--border-w) solid var(--primary-light);
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            font-size: 0.875rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: background 0.2s ease;
+        }
+
+        .btn:hover {
+            background: var(--primary-light);
+        }
+
+        .btn-secondary {
+            background: var(--bg-base);
+            border: var(--border-w) solid var(--border-strong);
+            color: var(--text-main);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-surface-hover);
+            border-color: var(--text-muted);
+        }
+
+        .btn-sm {
+            padding: 0.35rem 0.65rem;
+            font-size: 0.75rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.65rem 0.85rem;
+            background: var(--bg-base);
+            border: var(--border-w) solid var(--border-strong);
+            color: var(--text-main);
+            border-radius: var(--radius-md);
+            outline: none;
+            font-size: 0.9rem;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-light);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.75);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            padding: 1rem;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-box {
+            background: var(--bg-surface);
+            border: var(--border-w) solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            width: 100%;
+            max-width: 550px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-box-large {
+            max-width: 900px;
+        }
+
+        .badge {
+            padding: 0.25rem 0.6rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .badge-warning {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+            border: 1px solid var(--warning);
+        }
+
+        .badge-danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .badge-primary {
+            background: var(--primary-transparent);
+            color: var(--primary-light);
+            border: 1px solid var(--primary-light);
+        }
+    </style>
+</head>
+
+<body class="flex flex-col md:flex-row min-h-screen">
+
+    <!-- Mobile Top Header -->
+    <header class="md:hidden flex items-center justify-between p-4 bg-[#101c21] border-b border-[#1e333a]">
+        <div class="font-bold text-lg text-[#2c6e7e]">MCQ Admin Portal</div>
+        <button class="text-slate-200 p-2" onclick="toggleMobileSidebar()">Menu</button>
+    </header>
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="sidebar w-full md:w-64 p-4 flex-shrink-0 hidden md:block">
+        <div class="mb-6 p-2 flex justify-between items-center">
+            <div>
+                <h2 class="text-xl font-extrabold text-[#2c6e7e]">Gaurav Classes</h2>
+                <p class="text-xs text-[#94a3b8] mt-1">Admin Dashboard</p>
+            </div>
+            <button class="text-slate-400 hover:text-white text-xs px-2 py-1 border border-slate-700 rounded"
+                onclick="toggleTheme()">Theme</button>
+        </div>
+
+        <nav class="space-y-1">
+            <div class="nav-item active" onclick="switchTab('dashboard')">Dashboard</div>
+            <div class="nav-item" onclick="switchTab('tests')">Manage Tests</div>
+            <div class="nav-item" onclick="switchTab('students')">Manage Students</div>
+            <div class="nav-item" onclick="switchTab('results')">Student Results</div>
+            <div class="nav-item" onclick="switchTab('logs')">Activity Logs</div>
+        </nav>
+
+        <div class="mt-8 pt-4 border-t border-[#1e333a]">
+            <button class="btn btn-secondary w-full text-xs" onclick="logoutAdmin()">Sign Out</button>
+        </div>
+    </aside>
+
+    <main class="flex-1 p-4 md:p-8 overflow-y-auto min-w-0">
+
+        <!-- DASHBOARD TAB -->
+        <div id="tab-dashboard" class="tab-content">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-100">Executive Dashboard</h1>
+                    <p class="text-sm text-slate-400">Overview of examinations, student enrollments, and performance</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button class="btn" onclick="openTestModal()">+ Create Test</button>
+                    <button class="btn btn-secondary" onclick="openCSVModal()">Bulk Import CSV</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="stat-card">
+                    <div class="text-xs text-[#94a3b8] uppercase font-bold tracking-wider">Total Tests</div>
+                    <div id="stat-total-tests" class="text-3xl font-extrabold text-[#2c6e7e] mt-2">0</div>
+                    <div class="text-xs text-slate-400 mt-1"><span id="stat-published-tests">0</span> Published</div>
+                </div>
+                <div class="stat-card">
+                    <div class="text-xs text-[#94a3b8] uppercase font-bold tracking-wider">Total Students</div>
+                    <div id="stat-total-students" class="text-3xl font-extrabold text-[#2c6e7e] mt-2">0</div>
+                    <div class="text-xs text-slate-400 mt-1"><span id="stat-active-students">0</span> Active Accounts
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="text-xs text-[#94a3b8] uppercase font-bold tracking-wider">Submissions</div>
+                    <div id="stat-total-results" class="text-3xl font-extrabold text-[#2c6e7e] mt-2">0</div>
+                    <div class="text-xs text-slate-400 mt-1">Completed Attempts</div>
+                </div>
+                <div class="stat-card">
+                    <div class="text-xs text-[#94a3b8] uppercase font-bold tracking-wider">Class Average</div>
+                    <div id="stat-avg-score" class="text-3xl font-extrabold text-[#2c6e7e] mt-2">0%</div>
+                    <div class="text-xs text-slate-400 mt-1">Average Score</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="card lg:col-span-2">
+                    <h3 class="font-bold text-lg mb-4 text-slate-200">Recent Exam Submissions</h3>
+                    <div class="overflow-x-auto">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Test</th>
+                                    <th>Score</th>
+                                    <th>Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboard-results-table">
+                                <tr>
+                                    <td colspan="4" class="text-center text-slate-400 py-4">Loading submissions...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card space-y-3">
+                    <h3 class="font-bold text-lg text-slate-200">Quick Actions</h3>
+                    <button class="btn w-full justify-start" onclick="openTestModal()">+ Create New Test</button>
+                    <button class="btn btn-secondary w-full justify-start" onclick="openCSVModal()">Upload Questions
+                        (CSV)</button>
+                    <button class="btn btn-secondary w-full justify-start" onclick="openUserModal()">Add Student
+                        Profile</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TESTS TAB -->
+        <div id="tab-tests" class="tab-content" style="display: none;">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-100">Test Configurations</h2>
+                    <p class="text-sm text-slate-400">Manage online exam status and specifications</p>
+                </div>
+                <button class="btn" onclick="openTestModal()">+ Create Test</button>
+            </div>
+            <div class="card overflow-x-auto">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Title</th>
+                            <th>Duration</th>
+                            <th>Questions</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tests-table">
+                        <tr>
+                            <td colspan="6" class="text-center text-slate-400 py-4">Loading tests...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- STUDENTS TAB -->
+        <div id="tab-students" class="tab-content" style="display: none;">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-100">Student Profiles</h2>
+                    <p class="text-sm text-slate-400">View and update registered student details</p>
+                </div>
+                <button class="btn" onclick="openUserModal()">+ Create Student</button>
+            </div>
+            <div class="card overflow-x-auto">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="students-table">
+                        <tr>
+                            <td colspan="5" class="text-center text-slate-400 py-4">Loading students...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- RESULTS TAB -->
+        <div id="tab-results" class="tab-content" style="display: none;">
+            <h2 class="text-xl font-bold text-slate-100 mb-4">Detailed Student Exam Results</h2>
+            <div class="card overflow-x-auto">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Test</th>
+                            <th>Score</th>
+                            <th>Percentage</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-table">
+                        <tr>
+                            <td colspan="5" class="text-center text-slate-400 py-4">Loading results...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ACTIVITY LOGS TAB -->
+        <div id="tab-logs" class="tab-content" style="display: none;">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                <h2 class="text-xl font-bold text-slate-100">User Activity Audit Logs</h2>
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <input type="text" id="log-search-input" class="form-control"
+                        placeholder="Filter by User, Role, Action..." oninput="filterLogsUI()">
+                </div>
+            </div>
+            <div class="card overflow-x-auto">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>User ID / Name</th>
+                            <th>Action</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logs-table">
+                        <tr>
+                            <td colspan="4" class="text-center text-slate-400 py-4">Loading logs...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- RESULT DETAILS MODAL -->
+    <div id="modal-view-result" class="modal-overlay">
+        <div class="modal-box modal-box-large">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-[#2c6e7e]">Detailed Examination Result</h3>
+                <button class="btn btn-secondary btn-sm" onclick="downloadSelectedResultPDF()">Download PDF</button>
+            </div>
+            <div id="result-modal-details" class="mb-4 text-sm text-slate-300"></div>
+            <div id="result-modal-questions" class="space-y-3 max-h-[50vh] overflow-y-auto"></div>
+            <div class="flex justify-end pt-4">
+                <button type="button" class="btn btn-secondary" onclick="closeModals()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CREATE/EDIT TEST MODAL -->
+    <div id="modal-test" class="modal-overlay">
+        <div class="modal-box">
+            <h3 id="modal-test-title" class="text-lg font-bold mb-4 text-[#2c6e7e]">Create New Test</h3>
+            <form id="test-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Test ID</label>
+                    <input type="text" id="test-id" class="form-control" required placeholder="PY101">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Test Name</label>
+                    <input type="text" id="test-name" class="form-control" required placeholder="Python Fundamentals">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Duration (Mins)</label>
+                        <input type="number" id="test-duration" class="form-control" required min="1" value="30">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1">Status</label>
+                        <select id="test-status" class="form-control">
+                            <option value="Draft">Draft</option>
+                            <option value="Published">Published</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 pt-4">
+                    <button type="button" class="btn btn-secondary" onclick="closeModals()">Cancel</button>
+                    <button type="submit" class="btn">Save Test</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CREATE USER MODAL -->
+    <div id="modal-user" class="modal-overlay">
+        <div class="modal-box">
+            <h3 class="text-lg font-bold mb-4 text-[#2c6e7e]">Create New Student Profile</h3>
+            <form id="user-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Student ID</label>
+                    <input type="text" id="user-id" class="form-control" required placeholder="STU101">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Full Name</label>
+                    <input type="text" id="user-name" class="form-control" required placeholder="John Doe">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Email Address</label>
+                    <input type="email" id="user-email" class="form-control" required placeholder="student@example.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Password</label>
+                    <input type="password" id="user-pass" class="form-control" required minlength="6"
+                        placeholder="••••••••">
+                </div>
+                <div class="flex justify-end gap-3 pt-4">
+                    <button type="button" class="btn btn-secondary" onclick="closeModals()">Cancel</button>
+                    <button type="submit" class="btn">Create User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- BULK CSV MODAL -->
+    <div id="modal-csv" class="modal-overlay">
+        <div class="modal-box">
+            <h3 class="text-lg font-bold mb-4 text-[#2c6e7e]">Upload Questions via CSV</h3>
+            <form id="csv-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Target Test</label>
+                    <select id="csv-test-select" class="form-control" required></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">CSV File</label>
+                    <input type="file" id="csv-file" class="form-control" accept=".csv" required>
+                </div>
+                <div class="flex justify-end gap-3 pt-4">
+                    <button type="button" class="btn btn-secondary" onclick="closeModals()">Cancel</button>
+                    <button type="submit" class="btn">Parse CSV</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import {
+            auth,
+            db,
+            fetchAllTests,
+            fetchAllStudents,
+            fetchActivityLogs,
+            fetchAllResults,
+            createStudentByAdmin,
+            bulkUploadQuestions,
+            saveTest
+        } from './firebase-service.js';
+
+        import {
+            onAuthStateChanged,
+            signOut
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        import {
+            doc,
+            getDoc
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const state = {
+            tests: [],
+            students: [],
+            results: [],
+            logs: [],
+            activeResult: null
+        };
+
+        const $ = id => document.getElementById(id);
+
+        // --- AUTH GUARD FOR ADMIN ROLE ---
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = "login.html";
+                return;
+            }
+            try {
+                const userSnap = await getDoc(doc(db, "users", user.uid));
+                if (!userSnap.exists() || userSnap.data().role !== "admin" || userSnap.data().active === false) {
+                    await signOut(auth);
+                    window.location.href = "login.html";
+                    return;
+                }
+                // Admin session verified, load dashboard data
+                await loadData();
+            } catch (err) {
+                console.error("Admin Auth Error:", err);
+                window.location.href = "login.html";
+            }
+        });
+
+        window.logoutAdmin = async () => {
+            await signOut(auth);
+            window.location.href = "login.html";
+        };
+
+        window.toggleTheme = () => document.body.classList.toggle('light-mode');
+        window.toggleMobileSidebar = () => $('sidebar').classList.toggle('hidden');
+
+        window.switchTab = (tabId) => {
+            document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+
+            $(`tab-${tabId}`).style.display = 'block';
+
+            const navItems = document.querySelectorAll('.nav-item');
+            if (tabId === 'dashboard') navItems[0]?.classList.add('active');
+            if (tabId === 'tests') navItems[1]?.classList.add('active');
+            if (tabId === 'students') navItems[2]?.classList.add('active');
+            if (tabId === 'results') navItems[3]?.classList.add('active');
+            if (tabId === 'logs') navItems[4]?.classList.add('active');
+
+            if (tabId === 'logs') loadLogs();
+        };
+
+        window.closeModals = () => document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+
+        window.openTestModal = (testId = null) => {
+            if (testId) {
+                const t = state.tests.find(item => item.testId === testId);
+                if (t) {
+                    $('modal-test-title').textContent = "Edit Test";
+                    $('test-id').value = t.testId;
+                    $('test-id').readOnly = true;
+                    $('test-name').value = t.testName || '';
+                    $('test-duration').value = t.duration || 30;
+                    $('test-status').value = t.status || 'Draft';
+                }
+            } else {
+                $('modal-test-title').textContent = "Create New Test";
+                $('test-id').value = '';
+                $('test-id').readOnly = false;
+                $('test-name').value = '';
+                $('test-duration').value = 30;
+                $('test-status').value = 'Published';
+            }
+            $('modal-test').classList.add('active');
+        };
+
+        window.openUserModal = () => $('modal-user').classList.add('active');
+
+        window.openCSVModal = async () => {
+            const tests = await fetchAllTests();
+            $('csv-test-select').innerHTML = tests.map(t => `<option value="${t.testId}">${t.testName} (${t.testId})</option>`).join('');
+            $('modal-csv').classList.add('active');
+        };
+
+        async function loadData() {
+            const [tests, students, results] = await Promise.all([
+                fetchAllTests(),
+                fetchAllStudents(),
+                fetchAllResults()
+            ]);
+
+            state.tests = tests;
+            state.students = students;
+            state.results = results;
+
+            $('stat-total-tests').textContent = tests.length;
+            $('stat-published-tests').textContent = tests.filter(t => t.status === 'Published').length;
+            $('stat-total-students').textContent = students.length;
+            $('stat-active-students').textContent = students.filter(s => s.active !== false).length;
+            $('stat-total-results').textContent = results.length;
+
+            if (results.length > 0) {
+                const totalPct = results.reduce((acc, r) => acc + (parseFloat(r.percentage) || 0), 0);
+                $('stat-avg-score').textContent = (totalPct / results.length).toFixed(1) + '%';
+            }
+
+            // Render Recent Results Table
+            $('dashboard-results-table').innerHTML = results.slice(0, 5).map(r => `
+                <tr>
+                    <td><strong>${r.studentName}</strong> (${r.studentId})</td>
+                    <td>${r.testName || r.testId}</td>
+                    <td>${r.score} / ${r.total}</td>
+                    <td><span class="badge badge-success">${r.percentage}</span></td>
+                </tr>
+            `).join('') || `<tr><td colspan="4" class="text-center text-slate-400 py-4">No submissions found.</td></tr>`;
+
+            // Render Tests Table
+            $('tests-table').innerHTML = tests.map(t => `
+                <tr>
+                    <td><strong>${t.testId}</strong></td>
+                    <td>${t.testName}</td>
+                    <td>${t.duration} mins</td>
+                    <td>${t.totalQuestions || 0}</td>
+                    <td><span class="badge ${t.status === 'Published' ? 'badge-success' : 'badge-warning'}">${t.status}</span></td>
+                    <td><button class="btn btn-secondary btn-sm" onclick="openTestModal('${t.testId}')">Edit</button></td>
+                </tr>
+            `).join('') || `<tr><td colspan="6" class="text-center text-slate-400 py-4">No tests configured.</td></tr>`;
+
+            // Render Students Table
+            $('students-table').innerHTML = students.map(s => `
+                <tr>
+                    <td><strong>${s.studentId}</strong></td>
+                    <td>${s.name}</td>
+                    <td>${s.email}</td>
+                    <td><span class="badge ${s.active !== false ? 'badge-success' : 'badge-danger'}">${s.active !== false ? 'Active' : 'Inactive'}</span></td>
+                    <td><button class="btn btn-secondary btn-sm" onclick="alert('Student ID: ${s.studentId}')">Info</button></td>
+                </tr>
+            `).join('') || `<tr><td colspan="5" class="text-center text-slate-400 py-4">No students found.</td></tr>`;
+
+            // Render Detailed Results Table
+            $('results-table').innerHTML = results.map(r => `
+                <tr>
+                    <td><strong>${r.studentName}</strong> (${r.studentId})</td>
+                    <td>${r.testName}</td>
+                    <td>${r.score} / ${r.total}</td>
+                    <td><span class="badge badge-success">${r.percentage}</span></td>
+                    <td><button class="btn btn-secondary btn-sm" onclick="viewResultDetails('${r.resultId}')">View Details</button></td>
+                </tr>
+            `).join('') || `<tr><td colspan="5" class="text-center text-slate-400 py-4">No results recorded.</td></tr>`;
+        }
+
+        async function loadLogs() {
+            state.logs = await fetchActivityLogs();
+            filterLogsUI();
+        }
+
+        window.filterLogsUI = () => {
+            const query = ($('log-search-input')?.value || '').toLowerCase();
+            const filtered = state.logs.filter(l =>
+                (l.userName || '').toLowerCase().includes(query) ||
+                (l.userId || '').toLowerCase().includes(query) ||
+                (l.action || '').toLowerCase().includes(query) ||
+                (l.details || '').toLowerCase().includes(query)
+            );
+
+            $('logs-table').innerHTML = filtered.map(l => {
+                const dateStr = l.timestamp ? new Date(l.timestamp.seconds * 1000).toLocaleString() : 'Just now';
+                return `
+                    <tr>
+                        <td class="text-xs text-slate-400">${dateStr}</td>
+                        <td><strong>${l.userName}</strong> (${l.userId})</td>
+                        <td><span class="badge badge-primary">${l.action}</span></td>
+                        <td class="text-xs">${l.details}</td>
+                    </tr>
+                `;
+            }).join('') || `<tr><td colspan="4" class="text-center text-slate-400 py-4">No activity logs matching search.</td></tr>`;
+        };
+
+        window.viewResultDetails = (resultId) => {
+            const r = state.results.find(item => item.resultId === resultId);
+            if (!r) return;
+            state.activeResult = r;
+
+            $('result-modal-details').innerHTML = `
+                <p><strong>Student:</strong> ${r.studentName} (${r.studentId})</p>
+                <p><strong>Test:</strong> ${r.testName} | <strong>Score:</strong> ${r.score}/${r.total} (${r.percentage})</p>
+            `;
+
+            const container = $('result-modal-questions');
+            container.innerHTML = (r.detailedReview || []).map((item, idx) => {
+                const qData = item.questionData || {};
+                return `
+                    <div class="card text-xs">
+                        <p class="font-bold mb-1">Q${idx + 1}: ${qData.question || ''}</p>
+                        <p class="${item.isCorrect ? 'text-emerald-400' : 'text-red-400'} font-semibold">
+                            ${item.isCorrect ? 'Correct' : 'Incorrect'} | Selected: ${item.selectedOption || 'None'}
+                        </p>
+                    </div>
+                `;
+            }).join('');
+
+            $('modal-view-result').classList.add('active');
+        };
+
+        window.downloadSelectedResultPDF = () => {
+            if (!state.activeResult || !window.jspdf) return;
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.text(`Result: ${state.activeResult.studentName} - ${state.activeResult.testName}`, 14, 15);
+            doc.text(`Score: ${state.activeResult.score}/${state.activeResult.total} (${state.activeResult.percentage})`, 14, 25);
+            doc.save(`Result_${state.activeResult.studentId}_${state.activeResult.testId}.pdf`);
+        };
+
+        $('test-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await saveTest({
+                testId: $('test-id').value.trim(),
+                testName: $('test-name').value.trim(),
+                duration: parseInt($('test-duration').value) || 30,
+                status: $('test-status').value
+            });
+            closeModals();
+            await loadData();
+        });
+
+        $('user-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await createStudentByAdmin($('user-id').value, $('user-name').value, $('user-email').value, $('user-pass').value);
+            closeModals();
+            await loadData();
+        });
+
+        $('csv-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const testId = $('csv-test-select').value;
+            const file = $('csv-file').files[0];
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: async (res) => {
+                    const parsed = res.data.map(row => ({
+                        type: (row.type || 'mcq').trim(),
+                        question: row.question || '',
+                        codeLanguage: row.codeLanguage || '',
+                        code: row.code || '',
+                        options: { A: row.option_A || '', B: row.option_B || '', C: row.option_C || '', D: row.option_D || '' },
+                        answer: row.answer ? [row.answer.trim()] : [],
+                        explanation: row.explanation || ''
+                    }));
+                    await bulkUploadQuestions(testId, parsed);
+                    closeModals();
+                    await loadData();
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
