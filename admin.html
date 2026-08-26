@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - MCQ Portal</title>
-    <link rel="icon" href="data:,">
+    <link rel="icon" type="image/png" href="LOGO.png">
+
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
 
@@ -469,17 +470,26 @@
         </div>
     </main>
 
-    <!-- RESULT DETAILS MODAL -->
+    <!-- RESULT DETAILS & MARKS EDITOR MODAL -->
     <div id="modal-view-result" class="modal-overlay">
         <div class="modal-box modal-box-large">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-[#2c6e7e]">Detailed Examination Result</h3>
-                <button class="btn btn-secondary btn-sm" onclick="downloadSelectedResultPDF()">Download PDF</button>
+            <div class="flex justify-between items-center mb-4 border-b border-[#1e333a] pb-3">
+                <div>
+                    <h3 class="text-lg font-bold text-[#2c6e7e]">Examination Result & Marks Editor</h3>
+                    <p class="text-xs text-slate-400">Inspect question responses and toggle correctness to adjust score.
+                    </p>
+                </div>
+                <div class="flex gap-2">
+                    <button class="btn btn-secondary btn-sm" onclick="downloadSelectedResultPDF()">Download PDF</button>
+                    <button class="btn btn-sm" onclick="saveResultMarksChanges()">Save Changes</button>
+                </div>
             </div>
-            <div id="result-modal-details" class="mb-4 text-sm text-slate-300"></div>
+            <div id="result-modal-details"
+                class="mb-4 text-sm text-slate-300 bg-[#091013] p-3 rounded-md border border-[#1e333a]"></div>
             <div id="result-modal-questions" class="space-y-3 max-h-[50vh] overflow-y-auto"></div>
-            <div class="flex justify-end pt-4">
+            <div class="flex justify-end gap-2 pt-4 border-t border-[#1e333a] mt-4">
                 <button type="button" class="btn btn-secondary" onclick="closeModals()">Close</button>
+                <button type="button" class="btn" onclick="saveResultMarksChanges()">Save Result Changes</button>
             </div>
         </div>
     </div>
@@ -563,9 +573,43 @@
                 </div>
                 <div class="flex justify-end gap-3 pt-4">
                     <button type="button" class="btn btn-secondary" onclick="closeModals()">Cancel</button>
-                    <button type="submit" class="btn">Parse CSV</button>
+                    <button type="submit" class="btn">Preview Questions</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- CSV PREVIEW & VERIFICATION MODAL -->
+    <div id="modal-csv-preview" class="modal-overlay">
+        <div class="modal-box modal-box-large">
+            <div class="flex justify-between items-center mb-4 border-b border-[#1e333a] pb-3">
+                <div>
+                    <h3 class="text-lg font-bold text-[#2c6e7e]">Verify Parsed CSV Questions</h3>
+                    <p class="text-xs text-slate-400">Review the parsed questions and answers before importing to
+                        database.</p>
+                </div>
+                <span id="csv-preview-badge" class="badge badge-primary">0 Questions</span>
+            </div>
+
+            <div class="overflow-x-auto max-h-[55vh] overflow-y-auto mb-4 border border-[#1e333a] rounded-lg">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Type</th>
+                            <th>Question</th>
+                            <th>Correct Answer</th>
+                            <th>Explanation</th>
+                        </tr>
+                    </thead>
+                    <tbody id="csv-preview-table"></tbody>
+                </table>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" class="btn btn-secondary" onclick="closeCsvPreviewModal()">Cancel</button>
+                <button type="button" class="btn" onclick="confirmAndUploadCsv()">Confirm & Import to Database</button>
+            </div>
         </div>
     </div>
 
@@ -579,7 +623,8 @@
             fetchAllResults,
             createStudentByAdmin,
             bulkUploadQuestions,
-            saveTest
+            saveTest,
+            updateResult
         } from './firebase-service.js';
 
         import {
@@ -597,7 +642,9 @@
             students: [],
             results: [],
             logs: [],
-            activeResult: null
+            activeResult: null,
+            pendingCsvData: null,
+            pendingTestId: null
         };
 
         const $ = id => document.getElementById(id);
@@ -741,7 +788,7 @@
                     <td>${r.testName}</td>
                     <td>${r.score} / ${r.total}</td>
                     <td><span class="badge badge-success">${r.percentage}</span></td>
-                    <td><button class="btn btn-secondary btn-sm" onclick="viewResultDetails('${r.resultId}')">View Details</button></td>
+                    <td><button class="btn btn-secondary btn-sm" onclick="viewResultDetails('${r.resultId}')">View & Edit Marks</button></td>
                 </tr>
             `).join('') || `<tr><td colspan="5" class="text-center text-slate-400 py-4">No results recorded.</td></tr>`;
         }
@@ -776,27 +823,92 @@
         window.viewResultDetails = (resultId) => {
             const r = state.results.find(item => item.resultId === resultId);
             if (!r) return;
-            state.activeResult = r;
+            state.activeResult = JSON.parse(JSON.stringify(r)); // Clone active result
 
+            renderModalResultHeader();
+            renderModalQuestionsList();
+
+            $('modal-view-result').classList.add('active');
+        };
+
+        function renderModalResultHeader() {
+            const r = state.activeResult;
             $('result-modal-details').innerHTML = `
-                <p><strong>Student:</strong> ${r.studentName} (${r.studentId})</p>
-                <p><strong>Test:</strong> ${r.testName} | <strong>Score:</strong> ${r.score}/${r.total} (${r.percentage})</p>
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p><strong>Student:</strong> ${r.studentName} (${r.studentId})</p>
+                        <p><strong>Test:</strong> ${r.testName} (ID: ${r.testId})</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs text-slate-400">Current Score</span>
+                        <div class="text-lg font-extrabold text-[#2c6e7e]">${r.score} / ${r.total} (${r.percentage})</div>
+                    </div>
+                </div>
             `;
+        }
 
+        function renderModalQuestionsList() {
+            const r = state.activeResult;
             const container = $('result-modal-questions');
+
             container.innerHTML = (r.detailedReview || []).map((item, idx) => {
                 const qData = item.questionData || {};
+                let targetAns = qData.answer;
+                if (Array.isArray(targetAns)) targetAns = targetAns[0] || '';
+
+                let targetText = targetAns;
+                if (qData.options && qData.options[targetAns.toUpperCase()]) {
+                    targetText = `${targetAns.toUpperCase()}: ${qData.options[targetAns.toUpperCase()]}`;
+                }
+
                 return `
-                    <div class="card text-xs">
-                        <p class="font-bold mb-1">Q${idx + 1}: ${qData.question || ''}</p>
-                        <p class="${item.isCorrect ? 'text-emerald-400' : 'text-red-400'} font-semibold">
-                            ${item.isCorrect ? 'Correct' : 'Incorrect'} | Selected: ${item.selectedOption || 'None'}
-                        </p>
+                    <div class="card text-xs space-y-2 border border-[#1e333a]">
+                        <div class="flex justify-between items-start gap-2">
+                            <p class="font-bold text-slate-200">Q${idx + 1}: ${qData.question || ''}</p>
+                            <button class="btn btn-sm ${item.isCorrect ? 'bg-emerald-800 border-emerald-600' : 'bg-rose-950 border-rose-700'}" 
+                                onclick="toggleQuestionCorrectness(${idx})">
+                                ${item.isCorrect ? 'Marked Correct' : 'Marked Incorrect'}
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-slate-300">
+                            <div><strong>Student Answer:</strong> <span class="${item.isCorrect ? 'text-emerald-400' : 'text-red-400'}">${item.selectedOption || 'None'}</span></div>
+                            <div><strong>Correct Answer:</strong> <span class="text-emerald-400">${targetText}</span></div>
+                        </div>
+                        ${qData.explanation ? `<div class="bg-[#091013] p-2 rounded text-slate-400"><strong>Explanation:</strong> ${qData.explanation}</div>` : ''}
                     </div>
                 `;
             }).join('');
+        }
 
-            $('modal-view-result').classList.add('active');
+        window.toggleQuestionCorrectness = (qIdx) => {
+            if (!state.activeResult || !state.activeResult.detailedReview[qIdx]) return;
+            const item = state.activeResult.detailedReview[qIdx];
+            item.isCorrect = !item.isCorrect;
+
+            // Recalculate Total Score
+            const newScore = state.activeResult.detailedReview.filter(q => q.isCorrect).length;
+            const total = state.activeResult.total || 1;
+            state.activeResult.score = newScore;
+            state.activeResult.percentage = ((newScore / total) * 100).toFixed(2) + '%';
+
+            renderModalResultHeader();
+            renderModalQuestionsList();
+        };
+
+        window.saveResultMarksChanges = async () => {
+            if (!state.activeResult) return;
+            try {
+                await updateResult(state.activeResult.resultId, {
+                    score: state.activeResult.score,
+                    percentage: state.activeResult.percentage,
+                    detailedReview: state.activeResult.detailedReview
+                });
+                alert("Student result marks updated successfully!");
+                closeModals();
+                await loadData();
+            } catch (err) {
+                alert("Failed to update result: " + err.message);
+            }
         };
 
         window.downloadSelectedResultPDF = () => {
@@ -827,14 +939,16 @@
             await loadData();
         });
 
+        // CSV Upload Form Handler (Triggers Verification Preview Modal)
         $('csv-form').addEventListener('submit', (e) => {
             e.preventDefault();
             const testId = $('csv-test-select').value;
             const file = $('csv-file').files[0];
+
             Papa.parse(file, {
                 header: true,
                 skipEmptyLines: true,
-                complete: async (res) => {
+                complete: (res) => {
                     const parsed = res.data.map(row => ({
                         type: (row.type || 'mcq').trim(),
                         question: row.question || '',
@@ -844,12 +958,51 @@
                         answer: row.answer ? [row.answer.trim()] : [],
                         explanation: row.explanation || ''
                     }));
-                    await bulkUploadQuestions(testId, parsed);
+
+                    state.pendingCsvQuestions = parsed;
+                    state.pendingCsvTestId = testId;
+
                     closeModals();
-                    await loadData();
+                    openCsvPreviewModal(parsed, testId);
                 }
             });
         });
+
+        function openCsvPreviewModal(questions, testId) {
+            $('csv-preview-badge').textContent = `${questions.length} Questions Parsed`;
+
+            const tbody = $('csv-preview-table');
+            tbody.innerHTML = questions.map((q, idx) => {
+                let ansStr = Array.isArray(q.answer) ? q.answer.join(', ') : q.answer;
+                return `
+                    <tr>
+                        <td><strong>${idx + 1}</strong></td>
+                        <td><span class="badge badge-primary">${q.type}</span></td>
+                        <td class="max-w-xs truncate">${q.question}</td>
+                        <td><strong class="text-emerald-400">${ansStr}</strong></td>
+                        <td class="max-w-xs truncate text-xs text-slate-400">${q.explanation || '-'}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            $('modal-csv-preview').classList.add('active');
+        }
+
+        window.closeCsvPreviewModal = () => $('modal-csv-preview').classList.remove('active');
+
+        window.confirmAndUploadCsv = async () => {
+            if (!state.pendingCsvQuestions || !state.pendingCsvTestId) return;
+            try {
+                await bulkUploadQuestions(state.pendingCsvTestId, state.pendingCsvQuestions);
+                alert(`Successfully imported ${state.pendingCsvQuestions.length} questions to Test ${state.pendingCsvTestId}!`);
+                closeCsvPreviewModal();
+                state.pendingCsvQuestions = null;
+                state.pendingCsvTestId = null;
+                await loadData();
+            } catch (err) {
+                alert("Failed to import questions: " + err.message);
+            }
+        };
     </script>
 </body>
 

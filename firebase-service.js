@@ -19,7 +19,6 @@ import {
     where,
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-
 import { firebaseConfig } from "./firebase-config.js";
 
 // Primary Firebase App Instance
@@ -205,6 +204,21 @@ export async function submitExamResult(resultData) {
         `Submitted test: ${resultData.testName} (${resultData.score}/${resultData.total})`,
     );
     return resultId;
+}
+
+export async function updateResult(resultId, updatedData) {
+    await updateDoc(doc(db, "results", resultId), {
+        ...updatedData,
+        updatedAt: serverTimestamp(),
+    });
+
+    await logActivity(
+        "ADMIN",
+        "Admin",
+        "UPDATE_RESULT_MARKS",
+        `Updated result marks for ${resultId}`,
+    );
+    return true;
 }
 
 export async function fetchAllTests() {

@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gaurav Computer Classes - Exam Portal</title>
+    <link rel="icon" type="image/png" href="LOGO.png">
+
     <!-- Plus Jakarta Sans Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1108,6 +1110,23 @@
             }
         }
 
+        // Helper to format correct answer string
+        function getFormattedAnswer(qData) {
+            let target = qData.answer;
+            if (Array.isArray(target)) target = target[0] || '';
+            target = String(target).trim();
+
+            const type = qData.type || 'mcq';
+            if (type === 'mcq' || type === 'code_output') {
+                const key = target.toUpperCase();
+                const optText = (qData.options && qData.options[key]) ? qData.options[key] : '';
+                return optText ? `${key}: ${optText}` : key;
+            } else if (type === 'true_false') {
+                return target.toLowerCase() === 'true' ? 'True' : 'False';
+            }
+            return target;
+        }
+
         // Auto Session Recovery on Load
         document.addEventListener('DOMContentLoaded', async () => {
             const savedSession = localStorage.getItem(SESSION_KEY);
@@ -1509,9 +1528,14 @@
                     html += `<pre class="code-block" style="margin-bottom: 0.75rem;"><code>${escapeHtml(qData.code)}</code></pre>`;
                 }
 
+                const formattedCorrect = getFormattedAnswer(qData);
+
                 html += `
                     <div style="margin-bottom: 0.5rem; color: ${item.isCorrect ? 'var(--success)' : 'var(--danger)'}; font-weight: 600;">
                         ${item.isCorrect ? 'Correct' : 'Incorrect'} (Selected: ${escapeHtml(item.selectedOption || 'None')})
+                    </div>
+                    <div style="margin-bottom: 0.75rem; font-size: 0.875rem; color: var(--text-main);">
+                        <strong>Correct Answer:</strong> <span style="color: var(--success); font-weight: 600;">${escapeHtml(formattedCorrect)}</span>
                     </div>
                 `;
 
@@ -1547,16 +1571,18 @@
             doc.text("Question Review:", 14, y); y += 8;
 
             state.lastResultPayload.detailedReview.forEach((item, idx) => {
-                if (y > 270) { doc.addPage(); y = 15; }
+                if (y > 265) { doc.addPage(); y = 15; }
                 const qData = item.questionData || {};
+                const formattedCorrect = getFormattedAnswer(qData);
+
                 doc.setFontSize(9);
                 doc.setTextColor(0, 0, 0);
                 const qText = doc.splitTextToSize(`Q${idx + 1}: ${qData.question || ''}`, 180);
                 doc.text(qText, 14, y);
                 y += (qText.length * 5);
 
-                doc.setTextColor(item.isCorrect ? 16 : 239, item.isCorrect ? 185 : 68, item.isCorrect ? 129 : 68);
-                doc.text(`Status: ${item.isCorrect ? 'CORRECT' : 'INCORRECT'} | Selected: ${item.selectedOption || 'None'}`, 18, y);
+                doc.setTextColor(item.isCorrect ? 16 : 220, item.isCorrect ? 185 : 38, item.isCorrect ? 129 : 38);
+                doc.text(`Status: ${item.isCorrect ? 'CORRECT' : 'INCORRECT'} | Selected: ${item.selectedOption || 'None'} | Correct: ${formattedCorrect}`, 18, y);
                 y += 8;
             });
 
