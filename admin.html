@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - MCQ Portal</title>
-    <link rel="icon" type="image/png" href="LOGO.png">
+        <link rel="icon" type="image/png" href="LOGO.png">
 
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
@@ -270,8 +270,12 @@
                 <h2 class="text-xl font-extrabold text-[#2c6e7e]">Gaurav Classes</h2>
                 <p class="text-xs text-[#94a3b8] mt-1">Admin Dashboard</p>
             </div>
-            <button class="text-slate-400 hover:text-white text-xs px-2 py-1 border border-slate-700 rounded"
-                onclick="toggleTheme()">Theme</button>
+            <div class="flex gap-1">
+                <button class="text-slate-400 hover:text-white text-xs px-2 py-1 border border-slate-700 rounded"
+                    onclick="loadData()">Refresh</button>
+                <button class="text-slate-400 hover:text-white text-xs px-2 py-1 border border-slate-700 rounded"
+                    onclick="toggleTheme()">Theme</button>
+            </div>
         </div>
 
         <nav class="space-y-1">
@@ -297,6 +301,7 @@
                     <p class="text-sm text-slate-400">Overview of examinations, student enrollments, and performance</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
+                    <button class="btn btn-secondary" onclick="loadData()">Refresh Data</button>
                     <button class="btn" onclick="openTestModal()">+ Create Test</button>
                     <button class="btn btn-secondary" onclick="openCSVModal()">Bulk Import CSV</button>
                 </div>
@@ -629,7 +634,9 @@
 
         import {
             onAuthStateChanged,
-            signOut
+            signOut,
+            setPersistence,
+            browserLocalPersistence
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         import {
@@ -648,6 +655,153 @@
         };
 
         const $ = id => document.getElementById(id);
+
+        // Enforce 30-Day Persistent Auth Session
+        setPersistence(auth, browserLocalPersistence).catch(console.error);
+
+        // --- AUTH GUARD FOR ADMIN ROLE ---
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = "login.html";
+                return;
+            }
+            try {
+                const userSnap = await getDoc(doc(db, "users", user.uid));
+                if (!userSnap.exists() || userSnap.data().role !== "admin" || userSnap.data().active === false) {
+                    await signOut(auth);
+                    window.location.href = "login.html";
+                    return;
+                }
+                // Admin session verified, load dashboard data
+                await loadData();
+            } catch (err) {
+                console.error("Admin Auth Error:", err);
+                window.location.href = "login.html";
+            }
+        });
+
+        window.logoutAdmin = async () => {
+            await signOut(auth);
+            window.location.href = "login.html";
+        };
+
+        window.toggleTheme = () => document.body.classList.toggle('light-mode');
+        window.toggleMobileSidebar = () => $('sidebar').classList.toggle('hidden');
+
+        window.switchTab = (tabId) => {
+            document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+
+            $(`tab-${tabId}`).style.display = 'block';
+
+            const navItems = document.querySelectorAll('.nav-item');
+            if (tabId === 'dashboard') navItems[0]?.classList.add('active');
+            if (tabId === 'tests') navItems[1]?.classList.add('active');
+            if (tabId === 'students') navItems[2]?.classList.add('active');
+            if (tabId === 'results') navItems[3]?.classList.add('active');
+            if (tabId === 'logs') navItems[4]?.classList.add('active');
+
+            if (tabId === 'logs') loadLogs();
+        };
+
+        window.closeModals = () => document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+
+        window.openTestModal = (testId = null) => {
+            if (testId) {
+                const t = state.tests.find(item => item.testId === testId);
+                if (t) {
+                    $('modal-test-title').textContent = "Edit Test";
+                    $('test-id').value = t.testId;
+                    $('test-id').readOnly = true;
+                    $('test-name').value = t.testName || '';
+                    $('test-duration').value = t.duration || 30;
+                    $('test-status').value = t.status || 'Draft';
+                }
+            } else {
+                $('modal-test-title').textContent = "Create New Test";
+                $('test-id').value = '';
+                $('test-id').readOnly = false;
+                $('test-name').value = '';
+                $('test-duration').value = 30;
+                $('test-status').value = 'Published';
+            }
+            $('modal-test').classList.add('active');
+        };
+
+        window.openUserModal = () => $('modal-user').classList.add('active');
+
+        window.openCSVModal = async () => {
+            const tests = await fetchAllTests();
+            $('csv-test-select').innerHTML = tests.map(t => `<option value="${t.testId}">${t.testName} (${t.testId})</option>`).join('');
+            $('modal-csv').classList.add('active');
+        };
+
+        window.loadData = async function loadData() {
+            const [tests, students, results] = await Promise.all([
+                fetchAllTests(),
+                fetchAllStudents(),
+                fetchAllResults()
+            ]);
+
+            state.tests = tests;
+            state.students = students;
+            state.results = results;
+
+            $('stat-total-tests').textContent = tests.length;
+            $('stat-published-tests').textContent = tests.filter(t => t.status === 'Published').length;
+            $('stat-total-students').textContent = students.length;
+            $('stat-active-students').textContent = students.filter(s => s.active !== false).length;
+            $('stat-total-results').textContent = results.length;
+
+            if (results.length > 0) {
+                const totalPct = results.reduce((acc, r) => acc + (parseFloat(r.percentage) || 0), 0);
+                $('stat-avg-score').textContent = (totalPct / results.length).toFixed(1) + '%';
+            }
+
+            // Render Recent Results Table
+            $('dashboard-results-table').innerHTML = results.slice(0, 5).map(r => `
+                <tr>
+                    <td><strong>${r.studentName}</strong> (${r.studentId})</td>
+                    <td>${r.testName || r.testId}</td>
+                    <td>${r.score} / ${r.total}</td>
+                    <td><span class="badge badge-success">${r.percentage}</span></td>
+                </tr>
+            `).join('') || `<tr><td colspan="4" class="text-center text-slate-400 py-4">No submissions found.</td></tr>`;
+
+            // Render Tests Table
+            $('tests-table').innerHTML = tests.map(t => `
+                <tr>
+                    <td><strong>${t.testId}</strong></td>
+                    <td>${t.testName}</td>
+                    <td>${t.duration} mins</td>
+                    <td>${t.totalQuestions || 0}</td>
+                    <td><span class="badge ${t.status === 'Published' ? 'badge-success' : 'badge-warning'}">${t.status}</span></td>
+                    <td><button class="btn btn-secondary btn-sm" onclick="openTestModal('${t.testId}')">Edit</button></td>
+                </tr>
+            `).join('') || `<tr><td colspan="6" class="text-center text-slate-400 py-4">No tests configured.</td></tr>`;
+
+            // Render Students Table
+            $('students-table').innerHTML = students.map(s => `
+                <tr>
+                    <td><strong>${s.studentId}</strong></td>
+                    <td>${s.name}</td>
+                    <td>${s.email}</td>
+                    <td><span class="badge ${s.active !== false ? 'badge-success' : 'badge-danger'}">${s.active !== false ? 'Active' : 'Inactive'}</span></td>
+                    <td><button class="btn btn-secondary btn-sm" onclick="alert('Student ID: ${s.studentId}')">Info</button></td>
+                </tr>
+            `).join('') || `<tr><td colspan="5" class="text-center text-slate-400 py-4">No students found.</td></tr>`;
+
+            // Render Detailed Results Table
+            $('results-table').innerHTML = results.map(r => `
+                <tr>
+                    <td><strong>${r.studentName}</strong> (${r.studentId})</td>
+                    <td>${r.testName}</td>
+                    <td>${r.score} / ${r.total}</td>
+                    <td><span class="badge badge-success">${r.percentage}</span></td>
+                    <td><button class="btn btn-secondary btn-sm" onclick="viewResultDetails('${r.resultId}')">View & Edit Marks</button></td>
+                </tr>
+            `).join('') || `<tr><td colspan="5" class="text-center text-slate-400 py-4">No results recorded.</td></tr>`;
+        };
 
         // --- AUTH GUARD FOR ADMIN ROLE ---
         onAuthStateChanged(auth, async (user) => {
